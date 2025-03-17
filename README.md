@@ -17,8 +17,8 @@ A tool for crawling documentation websites and converting them to Markdown files
 
 ```bash
 # Clone the repository
-git clone https://github.com/dataiscool/doc-crawler.git
-cd doc-crawler
+git clone https://github.com/dataiscool/docu-crawler.git
+cd docu-crawler
 
 # Install in development mode
 pip install -e .
@@ -27,7 +27,7 @@ pip install -e .
 ### From PyPI (once published)
 
 ```bash
-pip install doc-crawler
+pip install docu-crawler
 ```
 
 ## Usage
@@ -36,10 +36,10 @@ After installation, you can use the tool directly from the command line:
 
 ```bash
 # Basic usage
-doc-crawler https://docs.example.com
+docu-crawler https://docs.example.com
 
 # With additional options
-doc-crawler https://docs.example.com --output my-docs --delay 2 --max-pages 100
+docu-crawler https://docs.example.com --output my-docs --delay 2 --max-pages 100
 ```
 
 ### Command Line Options
@@ -65,28 +65,28 @@ doc-crawler https://docs.example.com --output my-docs --delay 2 --max-pages 100
 
 ```bash
 # Basic crawl of Python documentation
-doc-crawler https://docs.python.org/3/ --output python-docs --delay 1.5
+docu-crawler https://docs.python.org/3/ --output python-docs --delay 1.5
 
 # Crawl with debug logs for more detail
-doc-crawler https://docs.python.org/3/library/ --output python-lib --log-level DEBUG
+docu-crawler https://docs.python.org/3/library/ --output python-lib --log-level DEBUG
 
 # Crawl with longer timeout for slow servers
-doc-crawler https://docs.example.com --timeout 30
+docu-crawler https://docs.example.com --timeout 30
 
 # Crawl only a limited number of pages
-doc-crawler https://cloud.google.com/run/docs/ --output cloud_run --max-pages 50
+docu-crawler https://cloud.google.com/run/docs/ --output cloud_run --max-pages 50
 
 # Store files in Google Cloud Storage
-doc-crawler https://docs.example.com --use-gcs --bucket my-docs-bucket
+docu-crawler https://docs.example.com --use-gcs --bucket my-docs-bucket
 
 # Specify GCS credentials explicitly
-doc-crawler https://docs.example.com --use-gcs --bucket my-docs-bucket --credentials ./gcp-credentials.json
+docu-crawler https://docs.example.com --use-gcs --bucket my-docs-bucket --credentials ./gcp-credentials.json
 
 # Specify GCP project ID explicitly
-doc-crawler https://docs.example.com --use-gcs --bucket my-docs-bucket --project my-gcp-project
+docu-crawler https://docs.example.com --use-gcs --bucket my-docs-bucket --project my-gcp-project
 
 # Run without arguments (loads from config file)
-doc-crawler
+docu-crawler
 ```
 
 ## Configuration File

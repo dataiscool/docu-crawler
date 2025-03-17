@@ -1,13 +1,13 @@
-# Contributing to Doc Crawler
+# Contributing to Docu Crawler
 
-Thank you for considering contributing to Doc Crawler! This document provides guidelines and instructions for contributing to this project.
+Thank you for considering contributing to Docu Crawler! This document provides guidelines and instructions for contributing to this project.
 
 ## Development Setup
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/dataiscool/doc-crawler.git
-   cd doc-crawler
+   git clone https://github.com/dataiscool/docu-crawler.git
+   cd docu-crawler
    ```
 
 2. Install in development mode:

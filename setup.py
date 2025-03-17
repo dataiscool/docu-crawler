@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="doc-crawler",
+    name="docu-crawler",
     version="0.1.0",
     description="Documentation Web Crawler that converts HTML to Markdown",
     author="Fillipi Bittencourt",
@@ -16,7 +16,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "doc-crawler=src.cli:run",
+            "docu-crawler=src.cli:run",
         ],
     },
     classifiers=[
