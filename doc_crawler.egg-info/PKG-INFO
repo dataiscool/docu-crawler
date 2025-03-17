@@ -1,0 +1,26 @@
+Metadata-Version: 2.2
+Name: doc-crawler
+Version: 0.1.0
+Summary: Documentation Web Crawler that converts HTML to Markdown
+Author: Your Name
+Author-email: your.email@example.com
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Requires-Python: >=3.6
+License-File: LICENSE
+Requires-Dist: requests>=2.25.0
+Requires-Dist: beautifulsoup4>=4.9.0
+Requires-Dist: google-cloud-storage>=2.0.0
+Requires-Dist: pyyaml>=6.0
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary

@@ -1,0 +1,21 @@
+# Documentation Web Crawler Configuration
+
+# Target URL to crawl
+url: https://docs.example.com
+
+# Output settings
+output: downloaded_docs
+
+# Crawler behavior
+delay: 1.0
+max_pages: 0  # 0 for unlimited
+timeout: 10
+log_level: INFO
+
+# Google Cloud Storage settings
+use_gcs: false
+bucket: your-bucket-name
+project: your-gcp-project-id  # Optional, if not specified uses the project from credentials
+credentials: /path/to/your/credentials.json
+
+# Note: You can override any of these settings with command line arguments
