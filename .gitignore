@@ -46,6 +46,11 @@ htmlcov/
 .pytest_cache/
 .tox/
 .nox/
+tests/__pycache__/
+tests/*.pyc
+.pytest_reports/
+coverage.xml
+.coverage.*
 
 # Documentation
 docs/_build/
