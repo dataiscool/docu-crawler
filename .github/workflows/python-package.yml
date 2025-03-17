@@ -58,4 +58,8 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
         python -m build
-        twine upload dist/*
+        # Print debug information
+        echo "Contents of dist directory:"
+        ls -la dist/
+        # Enable verbose output for twine
+        twine upload --verbose dist/*
