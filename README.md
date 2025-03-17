@@ -1,4 +1,4 @@
-# Documentation Web Crawler
+# Doc Crawler
 
 A tool for crawling documentation websites and converting them to Markdown files for offline reading.
 
