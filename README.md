@@ -1,8 +1,8 @@
 # docu-crawler: Python Web Crawler for HTML to Markdown Conversion
 
-> **Fast, lightweight Python library for crawling websites and converting HTML to Markdown. Perfect for documentation extraction, content migration, SEO optimization, and offline reading.**
+> **Fast, lightweight Python library for crawling websites and converting HTML to Markdown. Perfect for documentation extraction, content migration, and offline reading.**
 
-**docu-crawler** is a production-ready Python web crawler that extracts, converts, and stores web content efficiently. Crawl documentation sites, migrate content, generate SEO-friendly sitemaps, and create offline documentation with minimal dependencies.
+**docu-crawler** is a production-ready Python web crawler that extracts, converts, and stores web content efficiently. Crawl documentation sites, migrate content, and create offline documentation with minimal dependencies.
 
 ## What is docu-crawler?
 
@@ -12,7 +12,6 @@
 - **HTML to Markdown Conversion**: Convert HTML pages to clean, readable Markdown format
 - **Content Extraction**: Extract and preserve website structure and content
 - **Multi-Cloud Storage**: Store crawled content locally or in cloud storage (AWS S3, Google Cloud Storage, Azure Blob Storage, SFTP)
-- **SEO Optimization**: Generate sitemaps, extract metadata, and create SEO-friendly content
 
 ## Why Choose docu-crawler?
 
@@ -20,7 +19,6 @@
 - ✅ **Easy to Use**: Simple Python API and CLI interface
 - ✅ **Production Ready**: Built-in retry logic, rate limiting, and error handling
 - ✅ **Extensible**: Plugin-based storage system, easy to add custom backends
-- ✅ **SEO Friendly**: Generates sitemaps, extracts metadata, preserves structure
 - ✅ **Cross-Platform**: Works on Linux, Windows, and macOS
 
 ## Key Features
@@ -31,7 +29,6 @@
 - 📝 **HTML to Markdown**: Intelligent conversion preserving structure and formatting
 - 🤖 **Robots.txt Support**: Respects robots.txt and crawl-delay directives
 - ⚡ **Performance**: Configurable rate limiting and retry logic
-- 🔍 **SEO Optimized**: Generates sitemaps, extracts metadata, and adds frontmatter
 - 🛡️ **Cross-Platform**: Works on Linux, Windows, and macOS
 - 📦 **Optional Dependencies**: Install only what you need
 
@@ -260,32 +257,6 @@ Config file locations (checked in order):
 3. `~/.config/docu-crawler/config.yaml`
 4. `/etc/docu-crawler/config.yaml`
 
-## SEO Features
-
-docu-crawler includes comprehensive SEO optimization features:
-
-- **Metadata Extraction**: Automatically extracts title, description, keywords, and Open Graph tags
-- **Frontmatter Support**: Adds YAML frontmatter to Markdown files with metadata
-- **Sitemap Generation**: Creates `sitemap.xml` files for search engine indexing
-- **Structured Data**: Preserves JSON-LD and microdata from source pages
-- **Canonical URLs**: Maintains canonical URL references
-- **Semantic HTML**: Preserves semantic structure in Markdown output
-
-Example SEO-optimized output:
-
-```markdown
----
-title: Getting Started with Python
-description: Learn how to get started with Python programming
-canonical: https://docs.example.com/getting-started
-keywords: python, programming, tutorial
----
-
-# Getting Started with Python
-
-Content here...
-```
-
 ## Advanced Features
 
 ### Robots.txt Support
@@ -322,9 +293,6 @@ Crawl and convert documentation websites to Markdown for offline reading or migr
 
 ### Content Migration
 Migrate content from one platform to another by converting HTML to Markdown.
-
-### SEO Tools
-Generate sitemaps and extract metadata for SEO optimization.
 
 ### Offline Documentation
 Create offline versions of online documentation for local access.

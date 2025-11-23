@@ -64,8 +64,6 @@ setup(
         "html to markdown",
         "documentation crawler",
         "content extraction",
-        "sitemap generator",
-        "seo tools",
         "python crawler",
         "web scraping",
         "markdown converter",

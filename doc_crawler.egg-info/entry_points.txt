@@ -1,2 +1,0 @@
-[console_scripts]
-doc-crawler = src.cli:run

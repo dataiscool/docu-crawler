@@ -1,5 +1,4 @@
 import re
-import json
 from typing import List, Callable, Dict, Any, Optional
 from bs4 import BeautifulSoup, Tag, NavigableString
 from urllib.parse import urljoin
@@ -23,113 +22,13 @@ class HtmlProcessor:
     }
     
     @staticmethod
-    def extract_metadata(html_content: str, url: str = '') -> Dict[str, Any]:
-        """
-        Extract metadata from HTML content.
-        
-        Args:
-            html_content: HTML content to parse
-            url: URL of the page (for canonical URL)
-            
-        Returns:
-            Dictionary with extracted metadata
-        """
-        soup = BeautifulSoup(html_content, 'html.parser')
-        metadata = {}
-        
-        title_tag = soup.find('title')
-        if title_tag:
-            title = title_tag.string.strip() if title_tag.string else ''
-            if ' | ' in title:
-                title = title.split(' | ')[0].strip()
-            elif ' - ' in title:
-                title = title.split(' - ')[0].strip()
-            metadata['title'] = title
-        
-        meta_tags = soup.find_all('meta')
-        for meta in meta_tags:
-            name = meta.get('name') or meta.get('property') or ''
-            content = meta.get('content', '')
-            
-            if name.lower() == 'description':
-                metadata['description'] = content
-            elif name.lower() == 'keywords':
-                metadata['keywords'] = content
-            elif name.lower() == 'author':
-                metadata['author'] = content
-            elif name.lower() == 'og:title':
-                metadata.setdefault('og_title', content)
-            elif name.lower() == 'og:description':
-                metadata.setdefault('og_description', content)
-            elif name.lower() == 'og:image':
-                metadata.setdefault('og_image', content)
-        
-        canonical = soup.find('link', rel='canonical')
-        if canonical and canonical.get('href'):
-            metadata['canonical'] = canonical.get('href')
-        elif url:
-            metadata['canonical'] = url
-        
-        json_ld_scripts = soup.find_all('script', type='application/ld+json')
-        if json_ld_scripts:
-            metadata['structured_data'] = []
-            for script in json_ld_scripts:
-                try:
-                    data = json.loads(script.string)
-                    metadata['structured_data'].append(data)
-                except (json.JSONDecodeError, AttributeError):
-                    pass
-        
-        return metadata
-    
-    @staticmethod
-    def add_frontmatter(content: str, metadata: Dict[str, Any]) -> str:
-        """
-        Add YAML frontmatter to Markdown content.
-        
-        Args:
-            content: Markdown content
-            metadata: Metadata dictionary
-            
-        Returns:
-            Content with frontmatter
-        """
-        if not metadata:
-            return content
-        
-        frontmatter_lines = ['---']
-        
-        for key, value in metadata.items():
-            if value is not None:
-                if isinstance(value, list):
-                    frontmatter_lines.append(f"{key}:")
-                    for item in value:
-                        frontmatter_lines.append(f"  - {item}")
-                elif isinstance(value, dict):
-                    frontmatter_lines.append(f"{key}:")
-                    for k, v in value.items():
-                        frontmatter_lines.append(f"  {k}: {v}")
-                else:
-                    value_str = str(value).replace('"', '\\"')
-                    if ':' in value_str or '\n' in value_str:
-                        frontmatter_lines.append(f'{key}: "{value_str}"')
-                    else:
-                        frontmatter_lines.append(f'{key}: {value_str}')
-        
-        frontmatter_lines.append('---')
-        frontmatter = '\n'.join(frontmatter_lines)
-        
-        return f"{frontmatter}\n\n{content}"
-    
-    @staticmethod
-    def extract_text(html_content: str, url: str = '', include_metadata: bool = True) -> str:
+    def extract_text(html_content: str, url: str = '') -> str:
         """
         Extract content from HTML and convert it to Markdown format.
         
         Args:
             html_content: HTML content to parse
-            url: URL of the page (for metadata extraction)
-            include_metadata: Whether to include YAML frontmatter
+            url: URL of the page
             
         Returns:
             Extracted content in Markdown format
@@ -184,14 +83,6 @@ class HtmlProcessor:
                 markdown_content = f"# {title}\n\n{markdown_content}"
                 
             markdown_content = HtmlProcessor._post_process_markdown(markdown_content)
-            
-            if include_metadata and url:
-                try:
-                    metadata = HtmlProcessor.extract_metadata(html_content, url)
-                    if metadata:
-                        markdown_content = HtmlProcessor.add_frontmatter(markdown_content, metadata)
-                except Exception as e:
-                    logger.debug(f"Error extracting metadata: {str(e)}")
                 
             return markdown_content
             

@@ -82,8 +82,7 @@ class DocuCrawler:
                 
             text_content = self.html_processor.extract_text(
                 response.text, 
-                url=url, 
-                include_metadata=True
+                url=url
             )
             
             file_path = self.get_filepath(url)

@@ -5,7 +5,6 @@
 ### Added
 - Multi-cloud storage support (AWS S3, Azure Blob Storage, SFTP)
 - Python API with convenience functions
-- SEO features: metadata extraction, frontmatter, sitemap generation
 - Robots.txt support
 - Retry logic with exponential backoff
 - Rate limiting support
