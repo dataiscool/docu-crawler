@@ -8,7 +8,7 @@ with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'README.md'),
 
 setup(
     name="docu-crawler",
-    version="0.1.2",
+    version="1.0.0",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/dataiscool/docu-crawler",

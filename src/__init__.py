@@ -7,7 +7,7 @@ Main exports:
     - crawl_to_local, crawl_to_s3, crawl_to_gcs, etc.: Storage-specific functions
 """
 
-__version__ = '0.1.2'
+__version__ = '1.0.0'
 
 # Backward compatibility aliases
 from .doc_crawler import DocuCrawler

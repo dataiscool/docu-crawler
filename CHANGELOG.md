@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.0] - 2025-11-23
+
+### Changed
+- Version bump to 1.0.0 - Production ready release
+- Fixed file path generation to prevent nested directories
+- Improved config file loading and CLI argument handling
+
 ## [0.1.2] - 2025-11-23
 
 ### Fixed
