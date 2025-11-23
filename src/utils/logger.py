@@ -22,5 +22,5 @@ def setup_logger(log_file="doc_crawler.log", log_level=logging.INFO):
     )
     
     # Create and return the logger
-    logger = logging.getLogger('DocCrawler')
+    logger = logging.getLogger('DocuCrawler')
     return logger

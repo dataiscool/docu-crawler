@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
 
-"""
-Documentation Web Crawler CLI
-
-This module provides the command-line interface for the crawler.
-"""
-
 import sys
 import os
 import logging
@@ -14,10 +8,12 @@ import argparse
 
 from src.utils.logger import setup_logger
 from src.utils.cli import parse_args, get_log_level
-from src.utils.config import load_config, merge_config_and_args, get_credentials_path
-from src.doc_crawler import DocCrawler
+from src.utils.config import load_config, merge_config_and_args, get_credentials_path, get_storage_config
+from src.doc_crawler import DocuCrawler
 
-# Default values
+WebCrawler = DocuCrawler
+DocCrawler = DocuCrawler
+
 DEFAULTS = {
     'url': None,
     'output': 'downloaded_docs',
@@ -25,6 +21,7 @@ DEFAULTS = {
     'log_level': 'INFO',
     'max_pages': 0,
     'timeout': 10,
+    'storage_type': 'local',
     'use_gcs': False,
     'bucket': None,
     'project': None,
@@ -36,66 +33,66 @@ def args_to_dict(args: argparse.Namespace) -> Dict[str, Any]:
     return {k: v for k, v in vars(args).items() if k != 'config'}
 
 def run():
-    """
-    Main function to run the documentation crawler from CLI.
-    This is the entry point for the console_script.
-    """
-    # Parse command line arguments
+    """Main function to run the docu crawler from CLI."""
     args = parse_args()
     
-    # Check if we need to load config from file
     config = {}
-    if not args.url:  # No URL provided - check config
+    if not args.url:
         config = load_config()
         if not config.get('url'):
             print("Error: No URL specified and no URL found in config file.")
             print("Please provide a URL as an argument or in a config file.")
             return 1
     
-    # Convert args to dict for merging with config
     args_dict = args_to_dict(args)
     
-    # Merge config and args (args take precedence)
+    if args_dict.get('use_gcs'):
+        args_dict['storage_type'] = 'gcs'
+    
     params = merge_config_and_args(config, args_dict)
     
-    # Apply defaults for missing parameters
     for key, value in DEFAULTS.items():
         if params.get(key) is None:
             params[key] = value
     
-    # If use_gcs is True but no bucket specified, show error
-    if params['use_gcs'] and not params['bucket']:
-        print("Error: When using GCS storage (--use-gcs), a bucket name (--bucket) is required.")
+    storage_type = params.get('storage_type', 'local')
+    if storage_type == 'gcs' and not params.get('bucket'):
+        print("Error: When using GCS storage, a bucket name (--bucket) is required.")
         return 1
+    elif storage_type == 's3' and not params.get('s3_bucket'):
+        print("Error: When using S3 storage, a bucket name (--s3-bucket) is required.")
+        return 1
+    elif storage_type == 'azure' and not params.get('azure_container'):
+        print("Error: When using Azure storage, a container name (--azure-container) is required.")
+        return 1
+    elif storage_type == 'sftp':
+        if not params.get('sftp_host') or not params.get('sftp_user'):
+            print("Error: When using SFTP storage, --sftp-host and --sftp-user are required.")
+            return 1
     
-    # If no credentials path specified, try to find one
-    if params['use_gcs'] and not params['credentials']:
+    if storage_type == 'gcs' and not params.get('credentials'):
         params['credentials'] = get_credentials_path()
     
-    # Set up logging
     logger = setup_logger(log_level=get_log_level(params['log_level']))
     
     try:
-        # Show effective configuration
         logger.info("Starting crawler with the following configuration:")
         for key, value in params.items():
-            if key == 'credentials' and value:
-                # Don't log the full credentials path
-                logger.info(f"  {key}: [credentials file provided]")
+            if key in ['credentials', 'sftp_password', 'aws_secret_access_key', 'azure_account_key']:
+                if value:
+                    logger.info(f"  {key}: [provided]")
             else:
                 logger.info(f"  {key}: {value}")
         
-        # Create and run the crawler
-        crawler = DocCrawler(
+        storage_config = get_storage_config(params)
+        
+        crawler = DocuCrawler(
             start_url=params['url'], 
-            output_dir=params['output'], 
+            output_dir=params.get('output', 'downloaded_docs'), 
             delay=params['delay'],
             max_pages=params['max_pages'],
             timeout=params['timeout'],
-            use_gcs=params['use_gcs'],
-            bucket_name=params['bucket'],
-            project_id=params['project'],
-            credentials_path=params['credentials']
+            storage_config=storage_config
         )
         crawler.crawl()
     except KeyboardInterrupt:

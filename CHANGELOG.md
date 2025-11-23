@@ -1,11 +1,27 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+## [0.1.1] - 2025-11-23
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+### Added
+- Multi-cloud storage support (AWS S3, Azure Blob Storage, SFTP)
+- Python API with convenience functions
+- SEO features: metadata extraction, frontmatter, sitemap generation
+- Robots.txt support
+- Retry logic with exponential backoff
+- Rate limiting support
+- Minimal dependencies (only requests and beautifulsoup4 required)
 
-## [0.1.1] - 2025-03-17
+### Changed
+- Refactored storage system to plugin-based architecture
+- Enhanced HTML to Markdown conversion
+- Updated naming to "DocuCrawler"
+- Made YAML config support optional
+
+### Fixed
+- SSL verification enabled by default
+- Improved cross-platform path handling
+
+## [0.1.0] - 2025-03-17
 
 ### Added
 - Initial release
@@ -13,7 +29,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - HTML to Markdown conversion
 - Local and Google Cloud Storage support
 - Command-line interface
-- Configuration file support
 
 ### Changed
-- Updated Python compatibility to 3.9+ for modern environments
+- Python 3.9+ required

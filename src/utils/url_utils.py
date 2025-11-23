@@ -2,7 +2,7 @@ from urllib.parse import urlparse
 import logging
 from typing import Set
 
-logger = logging.getLogger('DocCrawler')
+logger = logging.getLogger('DocuCrawler')
 
 def is_valid_url(url: str, base_domain: str, base_path: str) -> bool:
     """

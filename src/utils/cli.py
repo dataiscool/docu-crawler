@@ -9,7 +9,7 @@ def parse_args() -> argparse.Namespace:
     Returns:
         Namespace containing the parsed arguments
     """
-    parser = argparse.ArgumentParser(description='Documentation Web Crawler')
+    parser = argparse.ArgumentParser(description='Docu Crawler - Web Crawler Library')
     parser.add_argument('url', nargs='?', help='The starting URL of the documentation')
     parser.add_argument('--output', help='Output directory for downloaded files (default: downloaded_docs)')
     parser.add_argument('--delay', type=float, help='Delay between requests in seconds (default: 1.0)')
@@ -21,16 +21,54 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--timeout', type=int,
                         help='Request timeout in seconds (default: 10)')
     
-    # GCS options
+    # Storage options
+    storage_group = parser.add_argument_group('Storage options')
+    storage_group.add_argument('--storage-type', 
+                              choices=['local', 'gcs', 's3', 'azure', 'sftp'],
+                              default='local',
+                              help='Storage backend type (default: local)')
+    
+    # GCS options (backward compatibility)
     gcs_group = parser.add_argument_group('Google Cloud Storage options')
     gcs_group.add_argument('--use-gcs', action='store_true',
-                           help='Store files in Google Cloud Storage instead of locally')
+                           help='Store files in Google Cloud Storage (deprecated: use --storage-type gcs)')
     gcs_group.add_argument('--bucket', 
-                           help='GCS bucket name (required if --use-gcs is specified)')
+                           help='GCS bucket name (required if using GCS)')
     gcs_group.add_argument('--project', 
                            help='Google Cloud project ID (if not specified, uses the project from credentials)')
     gcs_group.add_argument('--credentials', 
                            help='Path to Google Cloud credentials JSON file')
+    
+    # AWS S3 options
+    s3_group = parser.add_argument_group('AWS S3 Storage options')
+    s3_group.add_argument('--s3-bucket', 
+                          help='S3 bucket name (required if --storage-type s3)')
+    s3_group.add_argument('--s3-region', 
+                          help='AWS region (e.g., us-east-1, default: from AWS_DEFAULT_REGION env)')
+    s3_group.add_argument('--s3-endpoint-url',
+                          help='Custom S3 endpoint URL (for S3-compatible services)')
+    
+    # Azure Blob Storage options
+    azure_group = parser.add_argument_group('Azure Blob Storage options')
+    azure_group.add_argument('--azure-container',
+                             help='Azure container name (required if --storage-type azure)')
+    azure_group.add_argument('--azure-connection-string',
+                             help='Azure storage connection string')
+    
+    # SFTP options
+    sftp_group = parser.add_argument_group('SFTP Storage options')
+    sftp_group.add_argument('--sftp-host',
+                            help='SFTP server hostname (required if --storage-type sftp)')
+    sftp_group.add_argument('--sftp-user',
+                            help='SFTP username (required if --storage-type sftp)')
+    sftp_group.add_argument('--sftp-password',
+                            help='SFTP password (optional if using key file)')
+    sftp_group.add_argument('--sftp-port', type=int, default=22,
+                            help='SFTP port (default: 22)')
+    sftp_group.add_argument('--sftp-key-file',
+                            help='Path to SSH private key file')
+    sftp_group.add_argument('--sftp-remote-path',
+                            help='Base remote path for SFTP storage')
     
     # Config file options
     config_group = parser.add_argument_group('Configuration options')

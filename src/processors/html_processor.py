@@ -1,15 +1,15 @@
 import re
+import json
 from typing import List, Callable, Dict, Any, Optional
 from bs4 import BeautifulSoup, Tag, NavigableString
 from urllib.parse import urljoin
 import logging
 
-logger = logging.getLogger('DocCrawler')
+logger = logging.getLogger('DocuCrawler')
 
 class HtmlProcessor:
     """Handles HTML content processing and conversion to Markdown."""
     
-    # Common HTML elements to remove that don't contribute to content
     ELEMENTS_TO_REMOVE = [
         "script", "style", "iframe", "nav", "footer", "header", 
         "aside", "noscript", "meta", "button", "svg", "canvas",
@@ -17,19 +17,119 @@ class HtmlProcessor:
         ".ads", ".banner", ".cookie-notice", ".social-links"
     ]
     
-    # Map HTML elements to their Markdown counterparts for simple replacements
     MARKDOWN_SUBSTITUTIONS = {
         'hr': '---',
         'br': '\n'
     }
     
     @staticmethod
-    def extract_text(html_content: str) -> str:
+    def extract_metadata(html_content: str, url: str = '') -> Dict[str, Any]:
+        """
+        Extract metadata from HTML content.
+        
+        Args:
+            html_content: HTML content to parse
+            url: URL of the page (for canonical URL)
+            
+        Returns:
+            Dictionary with extracted metadata
+        """
+        soup = BeautifulSoup(html_content, 'html.parser')
+        metadata = {}
+        
+        title_tag = soup.find('title')
+        if title_tag:
+            title = title_tag.string.strip() if title_tag.string else ''
+            if ' | ' in title:
+                title = title.split(' | ')[0].strip()
+            elif ' - ' in title:
+                title = title.split(' - ')[0].strip()
+            metadata['title'] = title
+        
+        meta_tags = soup.find_all('meta')
+        for meta in meta_tags:
+            name = meta.get('name') or meta.get('property') or ''
+            content = meta.get('content', '')
+            
+            if name.lower() == 'description':
+                metadata['description'] = content
+            elif name.lower() == 'keywords':
+                metadata['keywords'] = content
+            elif name.lower() == 'author':
+                metadata['author'] = content
+            elif name.lower() == 'og:title':
+                metadata.setdefault('og_title', content)
+            elif name.lower() == 'og:description':
+                metadata.setdefault('og_description', content)
+            elif name.lower() == 'og:image':
+                metadata.setdefault('og_image', content)
+        
+        canonical = soup.find('link', rel='canonical')
+        if canonical and canonical.get('href'):
+            metadata['canonical'] = canonical.get('href')
+        elif url:
+            metadata['canonical'] = url
+        
+        json_ld_scripts = soup.find_all('script', type='application/ld+json')
+        if json_ld_scripts:
+            metadata['structured_data'] = []
+            for script in json_ld_scripts:
+                try:
+                    data = json.loads(script.string)
+                    metadata['structured_data'].append(data)
+                except (json.JSONDecodeError, AttributeError):
+                    pass
+        
+        return metadata
+    
+    @staticmethod
+    def add_frontmatter(content: str, metadata: Dict[str, Any]) -> str:
+        """
+        Add YAML frontmatter to Markdown content.
+        
+        Args:
+            content: Markdown content
+            metadata: Metadata dictionary
+            
+        Returns:
+            Content with frontmatter
+        """
+        if not metadata:
+            return content
+        
+        frontmatter_lines = ['---']
+        
+        for key, value in metadata.items():
+            if value is not None:
+                if isinstance(value, list):
+                    frontmatter_lines.append(f"{key}:")
+                    for item in value:
+                        frontmatter_lines.append(f"  - {item}")
+                elif isinstance(value, dict):
+                    frontmatter_lines.append(f"{key}:")
+                    for k, v in value.items():
+                        frontmatter_lines.append(f"  {k}: {v}")
+                else:
+                    value_str = str(value).replace('"', '\\"')
+                    if ':' in value_str or '\n' in value_str:
+                        frontmatter_lines.append(f'{key}: "{value_str}"')
+                    else:
+                        frontmatter_lines.append(f'{key}: {value_str}')
+        
+        frontmatter_lines.append('---')
+        frontmatter = '\n'.join(frontmatter_lines)
+        
+        return f"{frontmatter}\n\n{content}"
+    
+    @staticmethod
+    def extract_text(html_content: str, url: str = '', include_metadata: bool = True) -> str:
         """
         Extract content from HTML and convert it to Markdown format.
         
         Args:
             html_content: HTML content to parse
+            url: URL of the page (for metadata extraction)
+            include_metadata: Whether to include YAML frontmatter
             
         Returns:
             Extracted content in Markdown format
@@ -37,18 +137,13 @@ class HtmlProcessor:
         try:
             soup = BeautifulSoup(html_content, 'html.parser')
             
-            # Remove unnecessary elements
             for selector in HtmlProcessor.ELEMENTS_TO_REMOVE:
                 for element in soup.select(selector):
                     element.decompose()
             
-            # Get the main content with exhaustive selectors for different documentation formats
             main_content = (
-                # Common documentation containers
                 soup.find('main') or 
                 soup.find('article') or 
-                
-                # Documentation-specific selectors
                 soup.find('div', class_='content') or 
                 soup.find('div', class_='documentation') or
                 soup.find('div', class_='document') or
@@ -58,57 +153,50 @@ class HtmlProcessor:
                 soup.find('div', id='documentation') or
                 soup.find('div', id='main-content') or
                 soup.find('div', id='docs-content') or
-                
-                # Framework-specific documentation selectors
                 soup.find('div', class_='sphinx-content') or
                 soup.find('div', class_='md-content') or
                 soup.find('div', class_='page-inner') or
                 soup.find('div', class_='markdown-section') or
                 soup.find('div', class_='section') or
                 soup.find('div', class_='post-content') or
-                
-                # Fallbacks for other documentation systems
                 soup.find('div', class_='container') or
                 soup.find('div', class_='wrapper') or
                 soup.find('div', class_='entry-content') or
                 soup.find('div', role='main') or
-                
-                # Final fallbacks if nothing specific is found
                 soup.find('div', class_=lambda c: c and ('content' in c.lower() or 'doc' in c.lower())) or
                 soup.body
             )
             
             if not main_content:
-                # If no main content is found, return the title as a fallback
                 title = soup.title.string.strip() if soup.title else 'Untitled Page'
                 return f"# {title}\n\nNo main content could be extracted from this page."
                 
-            # Create a working copy to avoid modifying the original during processing
             content_copy = BeautifulSoup(str(main_content), 'html.parser')
-            
-            # Extract the page title
             title = soup.title.string.strip() if soup.title else 'Untitled Page'
-            # Clean up title (remove site name if present)
             if ' | ' in title:
                 title = title.split(' | ')[0].strip()
             elif ' - ' in title:
                 title = title.split(' - ')[0].strip()
                 
-            # Convert the HTML to a structured Markdown document
             markdown_content = HtmlProcessor._convert_to_markdown(content_copy)
             
-            # Add title as H1 if there's no H1 already in the document
             if not markdown_content.startswith('# '):
                 markdown_content = f"# {title}\n\n{markdown_content}"
                 
-            # Final cleanup
             markdown_content = HtmlProcessor._post_process_markdown(markdown_content)
+            
+            if include_metadata and url:
+                try:
+                    metadata = HtmlProcessor.extract_metadata(html_content, url)
+                    if metadata:
+                        markdown_content = HtmlProcessor.add_frontmatter(markdown_content, metadata)
+                except Exception as e:
+                    logger.debug(f"Error extracting metadata: {str(e)}")
                 
             return markdown_content
             
         except Exception as e:
             logger.error(f"Error converting HTML to Markdown: {str(e)}", exc_info=True)
-            # Fallback to a simpler conversion
             return HtmlProcessor._simple_html_to_markdown(html_content)
     
     @staticmethod
@@ -122,24 +210,76 @@ class HtmlProcessor:
         Returns:
             Converted Markdown string
         """
-        # Process elements that need special handling
-        HtmlProcessor._process_headings(soup)
-        HtmlProcessor._process_links(soup)
-        HtmlProcessor._process_images(soup)
         HtmlProcessor._process_code(soup)
-        HtmlProcessor._process_text_formatting(soup)
-        HtmlProcessor._process_lists(soup)
         HtmlProcessor._process_tables(soup)
+        HtmlProcessor._process_lists(soup)
         HtmlProcessor._process_blockquotes(soup)
         HtmlProcessor._process_horizontal_rules(soup)
+        HtmlProcessor._process_headings(soup)
+        HtmlProcessor._process_images(soup)
+        HtmlProcessor._process_links(soup)
+        HtmlProcessor._process_text_formatting(soup)
         
-        # Convert to text
-        text = soup.get_text(' ', strip=True)
+        return HtmlProcessor._build_markdown_from_tree(soup)
+    
+    @staticmethod
+    def _build_markdown_from_tree(element) -> str:
+        """
+        Build markdown by traversing the element tree.
         
-        # Replace multiple spaces with a single space
-        text = re.sub(r' +', ' ', text)
+        Args:
+            element: BeautifulSoup element or Tag
+            
+        Returns:
+            Markdown string
+        """
+        if isinstance(element, NavigableString):
+            text = str(element)
+            text = re.sub(r'[ \t]+', ' ', text)
+            return text
         
-        return text
+        if not hasattr(element, 'children'):
+            return ''
+        
+        markdown_parts = []
+        
+        for child in element.children:
+            if isinstance(child, NavigableString):
+                text = str(child).strip()
+                if text:
+                    markdown_parts.append(text)
+            elif hasattr(child, 'name'):
+                tag_name = child.name
+                
+                if tag_name in ['p', 'div', 'section', 'article', 'main']:
+                    child_md = HtmlProcessor._build_markdown_from_tree(child).strip()
+                    if child_md:
+                        markdown_parts.append(child_md)
+                        markdown_parts.append('')
+                
+                elif tag_name and tag_name.startswith('h') and tag_name[1:].isdigit():
+                    child_md = HtmlProcessor._build_markdown_from_tree(child).strip()
+                    if child_md:
+                        markdown_parts.append(child_md)
+                        markdown_parts.append('')
+                
+                elif tag_name in ['ul', 'ol', 'li']:
+                    child_md = HtmlProcessor._build_markdown_from_tree(child).strip()
+                    if child_md:
+                        markdown_parts.append(child_md)
+                
+                elif tag_name == 'br':
+                    markdown_parts.append('\n')
+                else:
+                    child_md = HtmlProcessor._build_markdown_from_tree(child).strip()
+                    if child_md:
+                        markdown_parts.append(child_md)
+        
+        result = ' '.join(markdown_parts)
+        result = re.sub(r' +', ' ', result)
+        result = re.sub(r'\n{3,}', '\n\n', result)
+        
+        return result
     
     @staticmethod
     def _post_process_markdown(markdown: str) -> str:
@@ -152,28 +292,18 @@ class HtmlProcessor:
         Returns:
             Cleaned markdown content
         """
-        # Replace multiple consecutive line breaks with double line breaks
         markdown = re.sub(r'\n{3,}', '\n\n', markdown)
-        
-        # Fix list items that might have been broken
         markdown = re.sub(r'\n\*', '\n\n*', markdown)
         markdown = re.sub(r'\n\d+\.', '\n\n\\g<0>', markdown)
-        
-        # Fix code blocks that might have incorrect spacing
         markdown = re.sub(r'```\s+', '```\n', markdown)
         markdown = re.sub(r'\s+```', '\n```', markdown)
-        
-        # Ensure headers have proper spacing
         markdown = re.sub(r'([^\n])(\n#{1,6} )', '\\1\n\n\\2', markdown)
         
-        # Ensure paragraphs have proper spacing
         paragraphs = []
         current_paragraph = []
         
         for line in markdown.split('\n'):
             stripped = line.strip()
-            
-            # Check if line is a header, list item, code block, or other special element
             is_special = (
                 stripped.startswith('#') or 
                 stripped.startswith('* ') or 
@@ -186,27 +316,23 @@ class HtmlProcessor:
                 stripped == '---'
             )
             
-            if not stripped:  # Empty line
+            if not stripped:
                 if current_paragraph:
                     paragraphs.append(' '.join(current_paragraph))
                     current_paragraph = []
                 paragraphs.append('')
-            elif is_special:  # Special Markdown element
+            elif is_special:
                 if current_paragraph:
                     paragraphs.append(' '.join(current_paragraph))
                     current_paragraph = []
                 paragraphs.append(stripped)
-            else:  # Regular paragraph text
+            else:
                 current_paragraph.append(stripped)
         
-        # Add any remaining paragraph
         if current_paragraph:
             paragraphs.append(' '.join(current_paragraph))
         
-        # Join paragraphs with proper spacing
         markdown = '\n\n'.join(p for p in paragraphs if p)
-        
-        # Final cleanups
         markdown = markdown.strip()
         
         return markdown
@@ -225,21 +351,13 @@ class HtmlProcessor:
         try:
             soup = BeautifulSoup(html_content, 'html.parser')
             
-            # Remove script and style elements
             for tag in soup(["script", "style"]):
                 tag.decompose()
             
-            # Get the title
             title = soup.title.string.strip() if soup.title else 'Untitled Page'
-            
-            # Extract text
             text = soup.get_text('\n', strip=True)
-            
-            # Clean up the text
             text = re.sub(r'\n{3,}', '\n\n', text)
             text = re.sub(r' +', ' ', text)
-            
-            # Add the title as a header
             markdown = f"# {title}\n\n{text}"
             
             return markdown
@@ -252,21 +370,21 @@ class HtmlProcessor:
         """Process HTML headings to Markdown format."""
         for i in range(1, 7):
             for heading in content.find_all(f'h{i}'):
-                heading_text = heading.get_text().strip()
+                heading_text = HtmlProcessor._get_inline_text(heading).strip()
                 heading_md = '#' * i
-                heading.replace_with(f"{heading_md} {heading_text}")
+                heading.replace_with(NavigableString(f"{heading_md} {heading_text}"))
     
     @staticmethod
     def _process_links(content):
         """Process HTML links to Markdown format."""
         for link in content.find_all('a', href=True):
-            link_text = link.get_text().strip()
-            # Skip empty links or links with no text
+            link_text = HtmlProcessor._get_inline_text(link).strip()
             if not link_text:
                 continue
                 
             href = link['href']
-            link.replace_with(f"[{link_text}]({href})")
+            link_text = link_text.replace('[', '\\[').replace(']', '\\]')
+            link.replace_with(NavigableString(f"[{link_text}]({href})"))
     
     @staticmethod
     def _process_images(content):
@@ -274,78 +392,110 @@ class HtmlProcessor:
         for img in content.find_all('img', src=True):
             alt_text = img.get('alt', '').strip() or img.get('title', '').strip() or 'Image'
             src = img['src']
-            img.replace_with(f"![{alt_text}]({src})")
+            alt_text = alt_text.replace('[', '\\[').replace(']', '\\]').replace('(', '\\(').replace(')', '\\)')
+            img.replace_with(NavigableString(f"![{alt_text}]({src})"))
     
     @staticmethod
     def _process_code(content):
         """Process HTML code blocks and inline code to Markdown format."""
-        # Process code blocks with language detection
         for pre in content.find_all('pre'):
-            # Try to find the code element inside pre
+            if pre.get('data-processed'):
+                continue
+            
             code_element = pre.find('code')
             if code_element:
-                # Try to determine the language
                 language = ''
-                # Check class on code element
                 if code_element.get('class'):
                     for cls in code_element.get('class'):
                         if cls.startswith(('language-', 'lang-')):
                             language = cls.split('-', 1)[1]
                             break
                 
-                # If no language found on code element, check pre
                 if not language and pre.get('class'):
                     for cls in pre.get('class'):
                         if cls.startswith(('language-', 'lang-')):
                             language = cls.split('-', 1)[1]
                             break
                 
-                # Get the text from the code element
                 code_text = code_element.get_text()
-                # Replace the entire pre element
-                pre.replace_with(f"```{language}\n{code_text}\n```")
+                pre.replace_with(NavigableString(f"\n```{language}\n{code_text}\n```\n"))
+                pre['data-processed'] = 'true'
             else:
-                # If no code element found, use the pre content directly
                 code_text = pre.get_text()
-                pre.replace_with(f"```\n{code_text}\n```")
+                pre.replace_with(NavigableString(f"\n```\n{code_text}\n```\n"))
+                pre['data-processed'] = 'true'
         
-        # Process inline code
         for code in content.find_all('code'):
-            # Skip if it's inside a pre (already processed)
-            if code.parent.name != 'pre':
-                code_text = code.get_text()
-                code.replace_with(f"`{code_text}`")
+            if code.parent and code.parent.name == 'pre':
+                continue
+            if code.get('data-processed'):
+                continue
+            
+            code_text = code.get_text()
+            code_text = code_text.replace('`', '\\`')
+            code.replace_with(NavigableString(f"`{code_text}`"))
+            code['data-processed'] = 'true'
     
     @staticmethod
     def _process_text_formatting(content):
         """Process HTML text formatting to Markdown format."""
-        # Process emphasis (italic)
         for em in content.find_all(['em', 'i']):
-            em_text = em.get_text()
-            if em_text.strip():  # Only process if there's actual text
-                em.replace_with(f"*{em_text}*")
+            if em.get('data-processed'):
+                continue
+            em_text = HtmlProcessor._get_inline_text(em).strip()
+            if em_text:
+                em.replace_with(NavigableString(f"*{em_text}*"))
+                em['data-processed'] = 'true'
         
-        # Process strong (bold)
         for strong in content.find_all(['strong', 'b']):
-            strong_text = strong.get_text()
-            if strong_text.strip():  # Only process if there's actual text
-                strong.replace_with(f"**{strong_text}**")
-        
-        # Process strikethrough
+            if strong.get('data-processed'):
+                continue
+            strong_text = HtmlProcessor._get_inline_text(strong).strip()
+            if strong_text:
+                strong.replace_with(NavigableString(f"**{strong_text}**"))
+                strong['data-processed'] = 'true'
+
         for s in content.find_all(['s', 'strike', 'del']):
-            s_text = s.get_text()
-            if s_text.strip():  # Only process if there's actual text
-                s.replace_with(f"~~{s_text}~~")
+            if s.get('data-processed'):
+                continue
+            s_text = HtmlProcessor._get_inline_text(s).strip()
+            if s_text:
+                s.replace_with(NavigableString(f"~~{s_text}~~"))
+                s['data-processed'] = 'true'
+    
+    @staticmethod
+    def _get_inline_text(element) -> str:
+        """
+        Get text content from an element, preserving inline formatting.
+        This is used for elements that should preserve their children's formatting.
+        
+        Args:
+            element: BeautifulSoup element
+            
+        Returns:
+            Text content with formatting preserved
+        """
+        if isinstance(element, NavigableString):
+            return str(element)
+        
+        parts = []
+        for child in element.children:
+            if isinstance(child, NavigableString):
+                parts.append(str(child))
+            elif hasattr(child, 'name'):
+                parts.append(HtmlProcessor._get_inline_text(child))
+        
+        return ''.join(parts)
     
     @staticmethod
     def _process_lists(content):
         """Process HTML lists to Markdown format with proper nesting."""
-        # First process all lists to add markers
         for list_tag in content.find_all(['ul', 'ol']):
-            # Mark this list for processing
-            list_tag['data-markdown-list'] = 'true'
+            if list_tag.get('data-processed'):
+                continue
             
-            # Process ordered lists
+            list_items = []
+
             if list_tag.name == 'ol':
                 start = list_tag.get('start', 1)
                 try:
@@ -354,53 +504,90 @@ class HtmlProcessor:
                     start = 1
                 
                 for i, li in enumerate(list_tag.find_all('li', recursive=False), start):
-                    li_text = li.get_text().strip()
-                    # Don't process nested lists yet
-                    has_nested = li.find(['ul', 'ol'])
-                    if not has_nested and li_text:
-                        li.replace_with(f"{i}. {li_text}")
-            
-            # Process unordered lists
+                    li_content = HtmlProcessor._process_list_item(li)
+                    if li_content.strip():
+                        list_items.append(f"{i}. {li_content}")
+
             elif list_tag.name == 'ul':
                 for li in list_tag.find_all('li', recursive=False):
-                    li_text = li.get_text().strip()
-                    # Don't process nested lists yet
-                    has_nested = li.find(['ul', 'ol'])
-                    if not has_nested and li_text:
-                        li.replace_with(f"* {li_text}")
+                    li_content = HtmlProcessor._process_list_item(li)
+                    if li_content.strip():
+                        list_items.append(f"* {li_content}")
+
+            if list_items:
+                list_markdown = '\n'.join(list_items)
+                list_tag.replace_with(NavigableString(f"\n{list_markdown}\n"))
+                list_tag['data-processed'] = 'true'
+    
+    @staticmethod
+    def _process_list_item(li) -> str:
+        """
+        Process a single list item, handling nested content.
         
-        # Now process and remove all list containers
-        for list_tag in content.find_all(attrs={'data-markdown-list': 'true'}):
-            # Get the text content with proper line breaks
-            list_text = list_tag.get_text('\n')
-            list_tag.replace_with(list_text)
+        Args:
+            li: BeautifulSoup li element
+            
+        Returns:
+            Markdown representation of the list item
+        """
+        parts = []
+        
+        for child in li.children:
+            if isinstance(child, NavigableString):
+                text = str(child).strip()
+                if text:
+                    parts.append(text)
+            elif hasattr(child, 'name'):
+                tag_name = child.name
+                
+                if tag_name in ['ul', 'ol']:
+                    HtmlProcessor._process_lists(child.parent)
+                    nested_md = HtmlProcessor._build_markdown_from_tree(child).strip()
+                    if nested_md:
+                        indented = '\n'.join('  ' + line if line.strip() else line 
+                                           for line in nested_md.split('\n'))
+                        parts.append(indented)
+                else:
+                    child_md = HtmlProcessor._build_markdown_from_tree(child).strip()
+                    if child_md:
+                        parts.append(child_md)
+        
+        return ' '.join(parts).strip()
     
     @staticmethod
     def _process_tables(content):
         """Process HTML tables to Markdown format."""
         for table in content.find_all('table'):
+            if table.get('data-processed'):
+                continue
+            
             markdown_table = []
             
-            # Process header rows
             if table.find('thead'):
                 header_cells = table.find('thead').find_all('th')
                 if header_cells:
-                    header_row = '| ' + ' | '.join(cell.get_text().strip() for cell in header_cells) + ' |'
+                    cell_texts = []
+                    for cell in header_cells:
+                        cell_text = HtmlProcessor._build_markdown_from_tree(cell).strip()
+                        cell_text = cell_text.replace('|', '\\|').replace('\n', ' ')
+                        cell_texts.append(cell_text)
+                    header_row = '| ' + ' | '.join(cell_texts) + ' |'
                     separator_row = '| ' + ' | '.join(['---'] * len(header_cells)) + ' |'
                     markdown_table.append(header_row)
                     markdown_table.append(separator_row)
-            
-            # Process body rows
+
             if table.find('tbody'):
                 for row in table.find('tbody').find_all('tr'):
                     cells = row.find_all(['td', 'th'])
                     if cells:
-                        # Escape pipe characters in cell content
-                        cell_contents = [cell.get_text().strip().replace('|', '\\|') for cell in cells]
-                        row_text = '| ' + ' | '.join(cell_contents) + ' |'
+                        cell_texts = []
+                        for cell in cells:
+                            cell_text = HtmlProcessor._build_markdown_from_tree(cell).strip()
+                            cell_text = cell_text.replace('|', '\\|').replace('\n', ' ')
+                            cell_texts.append(cell_text)
+                        row_text = '| ' + ' | '.join(cell_texts) + ' |'
                         markdown_table.append(row_text)
-            
-            # If no tbody/thead structure, process all rows
+
             if not markdown_table:
                 rows = table.find_all('tr')
                 has_header = False
@@ -408,37 +595,46 @@ class HtmlProcessor:
                 for i, row in enumerate(rows):
                     cells = row.find_all(['td', 'th'])
                     if cells:
-                        # Escape pipe characters in cell content
-                        cell_contents = [cell.get_text().strip().replace('|', '\\|') for cell in cells]
-                        row_text = '| ' + ' | '.join(cell_contents) + ' |'
+                        cell_texts = []
+                        for cell in cells:
+                            cell_text = HtmlProcessor._build_markdown_from_tree(cell).strip()
+                            cell_text = cell_text.replace('|', '\\|').replace('\n', ' ')
+                            cell_texts.append(cell_text)
+                        row_text = '| ' + ' | '.join(cell_texts) + ' |'
                         markdown_table.append(row_text)
-                        
-                        # If this is the first row and contains th cells, add a separator
+
                         if i == 0 and row.find('th') and not has_header:
                             separator_row = '| ' + ' | '.join(['---'] * len(cells)) + ' |'
                             markdown_table.insert(1, separator_row)
                             has_header = True
             
             if markdown_table:
-                table.replace_with('\n' + '\n'.join(markdown_table) + '\n')
+                table.replace_with(NavigableString('\n' + '\n'.join(markdown_table) + '\n'))
+                table['data-processed'] = 'true'
     
     @staticmethod
     def _process_blockquotes(content):
         """Process HTML blockquotes to Markdown format."""
         for blockquote in content.find_all('blockquote'):
-            # Get the text content
-            quote_text = blockquote.get_text().strip()
+            if blockquote.get('data-processed'):
+                continue
+
+            quote_content = HtmlProcessor._build_markdown_from_tree(blockquote).strip()
+
+            formatted_quote = '\n'.join(f"> {line}" if line.strip() else ">" 
+                                       for line in quote_content.split('\n'))
             
-            # Format as Markdown blockquote, adding > to each line
-            formatted_quote = '\n'.join(f"> {line}" for line in quote_text.split('\n'))
-            
-            blockquote.replace_with(formatted_quote)
+            blockquote.replace_with(NavigableString(f"\n{formatted_quote}\n"))
+            blockquote['data-processed'] = 'true'
     
     @staticmethod
     def _process_horizontal_rules(content):
         """Process HTML horizontal rules to Markdown format."""
         for hr in content.find_all('hr'):
-            hr.replace_with("\n---\n")
+            if hr.get('data-processed'):
+                continue
+            hr.replace_with(NavigableString("\n---\n"))
+            hr['data-processed'] = 'true'
     
     @staticmethod
     def extract_links(html_content: str, current_url: str, is_valid_url_func: Callable[[str], bool]) -> List[str]:
@@ -458,18 +654,15 @@ class HtmlProcessor:
         
         for a_tag in soup.find_all('a', href=True):
             href = a_tag['href']
-            
-            # Skip anchor links, javascript, and mailto links
+
             if (href.startswith('#') or 
                 href.startswith('javascript:') or 
                 href.startswith('mailto:') or
                 href.startswith('tel:')):
                 continue
-                
-            # Resolve relative URLs
+
             absolute_url = urljoin(current_url, href)
-            
-            # Only add if the URL is valid and not already visited
+
             if is_valid_url_func(absolute_url):
                 links.append(absolute_url)
                 

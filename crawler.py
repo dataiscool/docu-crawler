@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Documentation Web Crawler
+docu-crawler
 
 This is a compatibility wrapper for the modular structure.
 For new projects, use main.py directly.

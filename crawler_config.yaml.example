@@ -1,4 +1,4 @@
-# Documentation Web Crawler Configuration
+# Docu Crawler Configuration
 
 # Target URL to crawl
 url: https://docs.example.com
@@ -12,10 +12,43 @@ max_pages: 0  # 0 for unlimited
 timeout: 10
 log_level: INFO
 
+# Storage configuration
+# Options: local, gcs, s3, azure, sftp
+storage_type: local  # Default: local
+
+# Local Storage (default, no additional config needed)
+# output: downloaded_docs  # Already specified above
+
 # Google Cloud Storage settings
-use_gcs: false
-bucket: your-bucket-name
-project: your-gcp-project-id  # Optional, if not specified uses the project from credentials
-credentials: /path/to/your/credentials.json
+# storage_type: gcs
+# bucket: your-bucket-name
+# project: your-gcp-project-id  # Optional, if not specified uses the project from credentials
+# credentials: /path/to/your/credentials.json  # Optional, can use GOOGLE_APPLICATION_CREDENTIALS env var
+
+# AWS S3 Storage settings
+# storage_type: s3
+# s3_bucket: your-s3-bucket-name
+# s3_region: us-east-1  # Optional, defaults to AWS_DEFAULT_REGION env var
+# aws_access_key_id: your-access-key  # Optional, can use AWS_ACCESS_KEY_ID env var
+# aws_secret_access_key: your-secret-key  # Optional, can use AWS_SECRET_ACCESS_KEY env var
+# s3_endpoint_url: https://s3.amazonaws.com  # Optional, for S3-compatible services
+
+# Azure Blob Storage settings
+# storage_type: azure
+# azure_container: your-container-name
+# azure_connection_string: DefaultEndpointsProtocol=https;AccountName=...  # Can use AZURE_STORAGE_CONNECTION_STRING env var
+# OR use account name and key:
+# azure_account_name: your-account-name
+# azure_account_key: your-account-key
+
+# SFTP Storage settings
+# storage_type: sftp
+# sftp_host: sftp.example.com
+# sftp_user: your-username
+# sftp_password: your-password  # Optional if using key file, can use SFTP_PASSWORD env var
+# sftp_port: 22  # Optional, default: 22
+# sftp_key_file: /path/to/private/key  # Optional, can use SFTP_KEY_FILE env var
+# sftp_remote_path: /remote/path  # Optional, base remote path
 
 # Note: You can override any of these settings with command line arguments
+# Credentials can also be provided via environment variables for security
