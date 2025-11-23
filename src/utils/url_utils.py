@@ -40,15 +40,15 @@ def is_valid_url(url: str, base_domain: str, base_path: str) -> bool:
 
 def url_to_filepath(url: str, base_path: str, output_dir: str) -> str:
     """
-    Convert a URL to a local file path.
+    Convert a URL to a relative file path (without output_dir).
     
     Args:
         url: The URL to convert
         base_path: The base path to remove from the URL path
-        output_dir: Directory where the file should be saved
-        
+        output_dir: Directory where the file should be saved (for reference only)
+    
     Returns:
-        The local file path
+        Relative file path (without output_dir prefix)
     """
     parsed_url = urlparse(url)
     
@@ -65,19 +65,16 @@ def url_to_filepath(url: str, base_path: str, output_dir: str) -> str:
     if path.startswith('/'):
         path = path[1:]
     
-    # Create a file name based on the path
-    file_path = os.path.join(output_dir, path)
-    
-    # Ensure the directory exists
-    dir_path = os.path.dirname(file_path)
-    if dir_path:  # Only create directory if path is not empty
-        os.makedirs(dir_path, exist_ok=True)
+    # If path is empty after processing, use 'index'
+    if not path or path == '':
+        path = 'index'
     
     # Add .md extension for Markdown files
-    if not file_path.endswith('.md'):
-        file_path += '.md'
-        
-    return file_path
+    if not path.endswith('.md'):
+        path += '.md'
+    
+    # Return relative path (storage backend will add output_dir)
+    return path
 
 def should_add_to_queue(url: str, visited_urls: Set[str], urls_to_visit: list) -> bool:
     """
