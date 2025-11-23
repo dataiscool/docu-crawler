@@ -1,32 +1,33 @@
-# docu-crawler
+# docu-crawler: Python Web Crawler for HTML to Markdown Conversion
 
-> A lightweight, extensible Python library for crawling websites and converting HTML content to Markdown format. Perfect for documentation extraction, content migration, offline reading, and SEO optimization.
+> **Fast, lightweight Python library for crawling websites and converting HTML to Markdown. Perfect for documentation extraction, content migration, SEO optimization, and offline reading.**
 
-**docu-crawler** is a powerful yet lightweight web crawler library that helps you extract, convert, and store web content efficiently. Whether you're building documentation sites, migrating content, or creating offline documentation, docu-crawler provides a simple, flexible solution with minimal dependencies.
+**docu-crawler** is a production-ready Python web crawler that extracts, converts, and stores web content efficiently. Crawl documentation sites, migrate content, generate SEO-friendly sitemaps, and create offline documentation with minimal dependencies.
 
 ## What is docu-crawler?
 
-docu-crawler is a Python library designed for:
-- **Web Crawling**: Crawl websites systematically while respecting robots.txt
-- **HTML to Markdown Conversion**: Convert HTML pages to clean, readable Markdown
+**docu-crawler** is a specialized Python web crawler library designed for:
+
+- **Web Crawling**: Systematically crawl websites while respecting robots.txt
+- **HTML to Markdown Conversion**: Convert HTML pages to clean, readable Markdown format
 - **Content Extraction**: Extract and preserve website structure and content
-- **Multi-Cloud Storage**: Store crawled content locally or in cloud storage (S3, GCS, Azure, SFTP)
+- **Multi-Cloud Storage**: Store crawled content locally or in cloud storage (AWS S3, Google Cloud Storage, Azure Blob Storage, SFTP)
 - **SEO Optimization**: Generate sitemaps, extract metadata, and create SEO-friendly content
 
-## Why use docu-crawler?
+## Why Choose docu-crawler?
 
 - ✅ **Minimal Dependencies**: Only requires `requests` and `beautifulsoup4` for core functionality
-- ✅ **Easy to Use**: Simple API and CLI interface
+- ✅ **Easy to Use**: Simple Python API and CLI interface
 - ✅ **Production Ready**: Built-in retry logic, rate limiting, and error handling
 - ✅ **Extensible**: Plugin-based storage system, easy to add custom backends
 - ✅ **SEO Friendly**: Generates sitemaps, extracts metadata, preserves structure
 - ✅ **Cross-Platform**: Works on Linux, Windows, and macOS
 
-## Features
+## Key Features
 
 - 🚀 **Lightweight**: Minimal dependencies (only `requests` and `beautifulsoup4` required)
 - ☁️ **Multi-Cloud Storage**: Support for local filesystem, AWS S3, Google Cloud Storage, Azure Blob Storage, and SFTP
-- 🔄 **Flexible API**: Use as a library or CLI tool
+- 🔄 **Flexible API**: Use as a Python library or CLI tool
 - 📝 **HTML to Markdown**: Intelligent conversion preserving structure and formatting
 - 🤖 **Robots.txt Support**: Respects robots.txt and crawl-delay directives
 - ⚡ **Performance**: Configurable rate limiting and retry logic
@@ -47,101 +48,67 @@ This installs only the core dependencies (`requests` and `beautifulsoup4`).
 ### With Optional Features
 
 ```bash
-# With YAML config file support
-pip install docu-crawler[yaml]
-
-# With specific storage backend
-pip install docu-crawler[s3]      # AWS S3
-pip install docu-crawler[gcs]     # Google Cloud Storage
-pip install docu-crawler[azure]    # Azure Blob Storage
-pip install docu-crawler[sftp]     # SFTP
-
-# With async support (for advanced use cases)
-pip install docu-crawler[async]
-
-# Install everything
-pip install docu-crawler[all]
+pip install docu-crawler[yaml]      # YAML config file support
+pip install docu-crawler[s3]        # AWS S3 storage
+pip install docu-crawler[gcs]       # Google Cloud Storage
+pip install docu-crawler[azure]     # Azure Blob Storage
+pip install docu-crawler[sftp]      # SFTP storage
+pip install docu-crawler[async]      # Async support
+pip install docu-crawler[all]        # Install everything
 ```
 
-## Quick Start
+## Quick Start Guide
 
-### As a Python Library
+### Python Library Usage
 
 ```python
 from docu_crawler import crawl_to_local
 
-# Simple one-liner
 result = crawl_to_local("https://docs.example.com", output_dir="my_docs")
 print(f"Crawled {result['pages_crawled']} pages")
 ```
 
-### As a CLI Tool
+### Command Line Interface
 
 ```bash
-# Basic usage
-docu-crawler https://docs.example.com
-
-# With options
 docu-crawler https://docs.example.com --output my-docs --delay 2 --max-pages 100
 ```
 
 ## Usage Examples
 
-### Python API
-
-#### Basic Crawling
+### Basic Web Crawling
 
 ```python
 from docu_crawler import DocuCrawler
 
-# Create crawler instance
 crawler = DocuCrawler(
     start_url="https://docs.example.com",
     output_dir="downloaded_docs",
     delay=1.0,
     max_pages=100
 )
-
-# Start crawling
 crawler.crawl()
 ```
 
-#### Crawl to Cloud Storage
+### Crawl to Cloud Storage
 
 ```python
 from docu_crawler import crawl_to_s3, crawl_to_gcs, crawl_to_azure, crawl_to_sftp
 
 # AWS S3
-result = crawl_to_s3(
-    url="https://docs.example.com",
-    bucket="my-bucket",
-    region="us-east-1"
-)
+crawl_to_s3(url="https://docs.example.com", bucket="my-bucket", region="us-east-1")
 
 # Google Cloud Storage
-result = crawl_to_gcs(
-    url="https://docs.example.com",
-    bucket="my-bucket",
-    project="my-project"
-)
+crawl_to_gcs(url="https://docs.example.com", bucket="my-bucket", project="my-project")
 
 # Azure Blob Storage
-result = crawl_to_azure(
-    url="https://docs.example.com",
-    container="my-container",
-    connection_string="DefaultEndpointsProtocol=https;..."
-)
+crawl_to_azure(url="https://docs.example.com", container="my-container")
 
 # SFTP
-result = crawl_to_sftp(
-    url="https://docs.example.com",
-    host="sftp.example.com",
-    user="username",
-    password="password"  # or use key_file parameter
-)
+crawl_to_sftp(url="https://docs.example.com", host="sftp.example.com", user="username")
 ```
 
-#### Advanced Usage with Callbacks
+### Advanced Usage with Callbacks
 
 ```python
 from docu_crawler import crawl
@@ -160,73 +127,6 @@ result = crawl(
 )
 ```
 
-### CLI Usage
-
-#### Basic Options
-
-```bash
-# Basic crawl
-docu-crawler https://docs.example.com
-
-# Specify output directory
-docu-crawler https://docs.example.com --output my-docs
-
-# Set delay between requests
-docu-crawler https://docs.example.com --delay 2.0
-
-# Limit number of pages
-docu-crawler https://docs.example.com --max-pages 50
-
-# Set timeout
-docu-crawler https://docs.example.com --timeout 30
-
-# Set log level
-docu-crawler https://docs.example.com --log-level DEBUG
-```
-
-#### Storage Backends
-
-```bash
-# Local storage (default)
-docu-crawler https://docs.example.com --storage-type local --output my-docs
-
-# AWS S3
-docu-crawler https://docs.example.com --storage-type s3 --s3-bucket my-bucket --s3-region us-east-1
-
-# Google Cloud Storage
-docu-crawler https://docs.example.com --storage-type gcs --bucket my-bucket --project my-project
-
-# Azure Blob Storage
-docu-crawler https://docs.example.com --storage-type azure --azure-container my-container
-
-# SFTP
-docu-crawler https://docs.example.com --storage-type sftp --sftp-host sftp.example.com --sftp-user username
-```
-
-#### Using Configuration File
-
-Create `crawler_config.yaml`:
-
-```yaml
-url: https://docs.example.com
-output: downloaded_docs
-delay: 1.0
-max_pages: 0
-timeout: 10
-log_level: INFO
-
-# Storage configuration
-storage_type: s3
-s3_bucket: my-bucket
-s3_region: us-east-1
-```
-
-Then run:
-
-```bash
-docu-crawler  # Loads from config file automatically
-```
-
 ## Storage Backends
 
 ### Local Filesystem (Default)
@@ -235,7 +135,6 @@ No additional dependencies required. Files are saved to the specified output dir
 
 ```python
 from docu_crawler import crawl_to_local
-
 result = crawl_to_local("https://docs.example.com", output_dir="docs")
 ```
 
@@ -253,10 +152,7 @@ result = crawl_to_s3(
 )
 ```
 
-Credentials can be provided via:
-- Environment variables: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`
-- AWS credentials file: `~/.aws/credentials`
-- IAM roles (if running on EC2)
+Credentials via: Environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`), AWS credentials file, or IAM roles.
 
 ### Google Cloud Storage
 
@@ -268,15 +164,11 @@ from docu_crawler import crawl_to_gcs
 result = crawl_to_gcs(
     url="https://docs.example.com",
     bucket="my-bucket",
-    project="my-project",
-    credentials="/path/to/credentials.json"  # Optional
+    project="my-project"
 )
 ```
 
-Credentials can be provided via:
-- `GOOGLE_APPLICATION_CREDENTIALS` environment variable
-- Service account key file
-- Application Default Credentials
+Credentials via: `GOOGLE_APPLICATION_CREDENTIALS` environment variable or service account key file.
 
 ### Azure Blob Storage
 
@@ -287,15 +179,11 @@ from docu_crawler import crawl_to_azure
 
 result = crawl_to_azure(
     url="https://docs.example.com",
-    container="my-container",
-    connection_string="DefaultEndpointsProtocol=https;..."  # Optional
+    container="my-container"
 )
 ```
 
-Credentials can be provided via:
-- `AZURE_STORAGE_CONNECTION_STRING` environment variable
-- Connection string parameter
-- Account name and key
+Credentials via: `AZURE_STORAGE_CONNECTION_STRING` environment variable or connection string parameter.
 
 ### SFTP
 
@@ -308,17 +196,13 @@ result = crawl_to_sftp(
     url="https://docs.example.com",
     host="sftp.example.com",
     user="username",
-    password="password",  # or key_file="/path/to/key"
-    port=22,
-    remote_path="/remote/path"
+    password="password"  # or key_file="/path/to/key"
 )
 ```
 
 ## API Reference
 
-### Main Classes
-
-#### `DocuCrawler`
+### DocuCrawler Class
 
 Main crawler class for programmatic use.
 
@@ -333,44 +217,21 @@ crawler = DocuCrawler(
     timeout: int = 10,
     storage_config: Optional[Dict[str, Any]] = None
 )
-
 crawler.crawl()
 ```
 
 ### Convenience Functions
 
-#### `crawl()`
-
-General-purpose crawl function with callbacks.
-
-```python
-from docu_crawler import crawl
-
-result = crawl(
-    url: str,
-    output_dir: str = "downloaded_docs",
-    delay: float = 1.0,
-    max_pages: int = 0,
-    timeout: int = 10,
-    storage_config: Optional[Dict[str, Any]] = None,
-    on_page_crawled: Optional[Callable[[str, int], None]] = None,
-    on_error: Optional[Callable[[str, Exception], None]] = None
-) -> Dict[str, Any]
-```
-
-#### Storage-Specific Functions
-
-- `crawl_to_local(url, output_dir, **kwargs)`
-- `crawl_to_s3(url, bucket, region=None, **kwargs)`
-- `crawl_to_gcs(url, bucket, project=None, credentials=None, **kwargs)`
-- `crawl_to_azure(url, container, connection_string=None, **kwargs)`
-- `crawl_to_sftp(url, host, user, password=None, port=22, key_file=None, remote_path='', **kwargs)`
+- `crawl(url, output_dir, delay, max_pages, timeout, storage_config, on_page_crawled, on_error)` - General-purpose crawl function
+- `crawl_to_local(url, output_dir, **kwargs)` - Crawl to local filesystem
+- `crawl_to_s3(url, bucket, region=None, **kwargs)` - Crawl to AWS S3
+- `crawl_to_gcs(url, bucket, project=None, credentials=None, **kwargs)` - Crawl to Google Cloud Storage
+- `crawl_to_azure(url, container, connection_string=None, **kwargs)` - Crawl to Azure Blob Storage
+- `crawl_to_sftp(url, host, user, password=None, port=22, key_file=None, remote_path='', **kwargs)` - Crawl via SFTP
 
 ## Configuration
 
 ### Environment Variables
-
-All storage backends support environment variables for credentials:
 
 - **AWS S3**: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`
 - **GCS**: `GOOGLE_APPLICATION_CREDENTIALS`
@@ -379,47 +240,38 @@ All storage backends support environment variables for credentials:
 
 ### Configuration File
 
-Create a YAML configuration file (requires `docu-crawler[yaml]`):
+Create `crawler_config.yaml`:
 
 ```yaml
-# Target URL
 url: https://docs.example.com
-
-# Output settings
 output: downloaded_docs
-
-# Crawler behavior
 delay: 1.0
-max_pages: 0  # 0 for unlimited
+max_pages: 0
 timeout: 10
 log_level: INFO
-
-# Storage configuration
-storage_type: s3  # local, gcs, s3, azure, sftp
+storage_type: s3
 s3_bucket: my-bucket
 s3_region: us-east-1
 ```
 
-The crawler looks for config files in:
+Config file locations (checked in order):
 1. `./crawler_config.yaml`
 2. `./config/crawler_config.yaml`
 3. `~/.config/docu-crawler/config.yaml`
 4. `/etc/docu-crawler/config.yaml`
 
-## Advanced Features
+## SEO Features
 
-### SEO Optimization
+docu-crawler includes comprehensive SEO optimization features:
 
-docu-crawler includes comprehensive SEO features to help your crawled content rank better in search engines:
-
-- **Metadata Extraction**: Automatically extracts title, description, keywords, and Open Graph tags from HTML
-- **Frontmatter Support**: Adds YAML frontmatter to generated Markdown files with metadata
-- **Sitemap Generation**: Creates `sitemap.xml` files for crawled content to help search engines index your pages
+- **Metadata Extraction**: Automatically extracts title, description, keywords, and Open Graph tags
+- **Frontmatter Support**: Adds YAML frontmatter to Markdown files with metadata
+- **Sitemap Generation**: Creates `sitemap.xml` files for search engine indexing
 - **Structured Data**: Preserves JSON-LD and microdata from source pages
-- **Canonical URLs**: Maintains canonical URL references for proper SEO
+- **Canonical URLs**: Maintains canonical URL references
 - **Semantic HTML**: Preserves semantic structure in Markdown output
 
-Example of SEO-optimized output:
+Example SEO-optimized output:
 
 ```markdown
 ---
@@ -434,23 +286,15 @@ keywords: python, programming, tutorial
 Content here...
 ```
 
+## Advanced Features
+
 ### Robots.txt Support
 
-Automatically respects `robots.txt` files:
-
-```python
-from docu_crawler import DocuCrawler
-from docu_crawler.utils.robots import RobotsTxtChecker
-
-robots_checker = RobotsTxtChecker()
-if robots_checker.can_fetch(url):
-    # Crawl the URL
-    pass
-```
+Automatically respects `robots.txt` files and crawl-delay directives.
 
 ### Rate Limiting
 
-Built-in rate limiting support:
+Built-in rate limiting to respect server limits:
 
 ```python
 from docu_crawler.utils.rate_limiter import RateLimiter
@@ -468,96 +312,8 @@ from docu_crawler.utils.retry import retry_with_backoff
 
 @retry_with_backoff(max_retries=3, initial_delay=1.0)
 def fetch_url(url):
-    # Your code here
     pass
 ```
-
-## Project Structure
-
-```
-docu-crawler/
-├── src/
-│   ├── api/              # Public API
-│   │   ├── __init__.py   # Main API exports
-│   │   └── simple.py     # Convenience functions
-│   ├── models/           # Data models
-│   │   ├── crawler_stats.py
-│   │   └── crawl_result.py
-│   ├── processors/       # Content processors
-│   │   └── html_processor.py
-│   ├── utils/            # Utilities
-│   │   ├── storage/      # Storage backends
-│   │   │   ├── base.py
-│   │   │   ├── local.py
-│   │   │   ├── gcs.py
-│   │   │   ├── aws_s3.py
-│   │   │   ├── azure_blob.py
-│   │   │   └── sftp.py
-│   │   ├── cli.py
-│   │   ├── config.py
-│   │   ├── logger.py
-│   │   ├── robots.py
-│   │   ├── retry.py
-│   │   ├── rate_limiter.py
-│   │   └── sitemap.py
-│   ├── cli.py            # CLI entry point
-│   └── doc_crawler.py    # Main crawler class
-├── crawler_config.yaml.example
-├── setup.py
-└── README.md
-```
-
-## Troubleshooting
-
-### Common Issues
-
-**Import Error**: Make sure you've installed docu-crawler:
-```bash
-pip install docu-crawler
-```
-
-**Storage Backend Error**: Install the required storage backend:
-```bash
-pip install docu-crawler[s3]  # or gcs, azure, sftp
-```
-
-**YAML Config Error**: Install YAML support:
-```bash
-pip install docu-crawler[yaml]
-```
-
-**SSL Certificate Error**: Some sites may have SSL issues. The crawler uses proper SSL verification by default.
-
-## Contributing
-
-Contributions are welcome! Whether it's bug fixes, new features, or documentation improvements, we appreciate your help.
-
-Please see [CONTRIBUTING.md](CONTRIBUTING.md) for:
-- Development setup instructions
-- Code style guidelines
-- Testing requirements
-- Pull request process
-
-## Changelog
-
-See [CHANGELOG.md](CHANGELOG.md) for a list of changes and version history.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Links and Resources
-
-- **GitHub Repository**: https://github.com/dataiscool/docu-crawler
-- **PyPI Package**: https://pypi.org/project/docu-crawler/ (once published)
-- **Issue Tracker**: https://github.com/dataiscool/docu-crawler/issues
-- **Documentation**: See `docs/` directory for detailed API documentation
-
-## Support
-
-- **Questions**: Open an issue on GitHub
-- **Bugs**: Report bugs via GitHub Issues
-- **Feature Requests**: Submit feature requests via GitHub Issues
 
 ## Use Cases
 
@@ -576,7 +332,7 @@ Create offline versions of online documentation for local access.
 ### Content Analysis
 Extract and analyze web content programmatically.
 
-## Frequently Asked Questions (FAQ)
+## Frequently Asked Questions
 
 ### How do I install docu-crawler?
 
@@ -584,14 +340,11 @@ Extract and analyze web content programmatically.
 pip install docu-crawler
 ```
 
-For optional features like cloud storage support:
-```bash
-pip install docu-crawler[all]
-```
+For all features: `pip install docu-crawler[all]`
 
 ### What Python versions are supported?
 
-docu-crawler supports Python 3.9 and above.
+Python 3.9 and above.
 
 ### Can I use it without cloud storage?
 
@@ -607,14 +360,38 @@ Yes, the HTML processor can be extended and customized for your specific needs.
 
 ### Is it fast?
 
-docu-crawler is designed for efficiency with configurable rate limiting and retry logic. For maximum performance, consider using the async API (coming soon).
+docu-crawler is designed for efficiency with configurable rate limiting and retry logic.
+
+## Troubleshooting
+
+**Import Error**: Install docu-crawler: `pip install docu-crawler`
+
+**Storage Backend Error**: Install the required backend: `pip install docu-crawler[s3]`
+
+**YAML Config Error**: Install YAML support: `pip install docu-crawler[yaml]`
+
+**SSL Certificate Error**: The crawler uses proper SSL verification by default.
+
+## Contributing
+
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for version history.
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## Links
+
+- **GitHub**: https://github.com/dataiscool/docu-crawler
+- **Issues**: https://github.com/dataiscool/docu-crawler/issues
+- **PyPI**: https://pypi.org/project/docu-crawler/
 
 ## Related Projects
 
 - [Scrapy](https://scrapy.org/) - Full-featured web scraping framework
 - [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/) - HTML parsing library
 - [Markdownify](https://github.com/matthewwithanm/python-markdownify) - HTML to Markdown converter
-
-## Keywords
-
-web crawler, html to markdown, documentation crawler, content extraction, sitemap generator, seo tools, python crawler, web scraping library, markdown converter, documentation tool, python web crawler, html parser, markdown generator, website crawler, content migration tool, documentation generator, sitemap creator, seo crawler, python scraping library, html to markdown python, web content extractor, documentation site crawler, markdown converter tool, python crawler library, website content extractor
