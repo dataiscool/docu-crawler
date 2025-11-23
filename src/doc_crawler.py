@@ -2,13 +2,16 @@ import os
 import time
 import requests
 from urllib.parse import urlparse
-from typing import List, Set, Optional, Dict, Any
+from typing import List, Set, Optional, Dict, Any, Callable
 import logging
 
 from src.models.crawler_stats import CrawlerStats
 from src.processors.html_processor import HtmlProcessor
 from src.utils.url_utils import is_valid_url, url_to_filepath, should_add_to_queue
 from src.utils.storage import StorageClient
+from src.utils.robots import RobotsTxtChecker
+from src.utils.rate_limiter import SimpleRateLimiter
+from src.utils.retry import retry_on_http_error
 
 logger = logging.getLogger('DocuCrawler')
 
@@ -39,6 +42,15 @@ class DocuCrawler:
         }
         
         self.html_processor = HtmlProcessor()
+        
+        # Initialize robots.txt checker
+        self.robots_checker = RobotsTxtChecker()
+        
+        # Initialize rate limiter (use delay as the rate limit)
+        self.rate_limiter = SimpleRateLimiter(delay=delay)
+        
+        # Error callback (can be set externally)
+        self._on_error_callback: Optional[Callable[[str, Exception], None]] = None
         
         if storage_config:
             self.storage = StorageClient(**storage_config)
@@ -121,12 +133,26 @@ class DocuCrawler:
                 
                 if current_url in self.visited_urls:
                     continue
+                
+                # Check robots.txt before crawling
+                user_agent = self.headers.get('User-Agent', '*')
+                if not self.robots_checker.can_fetch(current_url, user_agent):
+                    logger.debug(f"Skipping {current_url} - disallowed by robots.txt")
+                    continue
+                
+                # Apply rate limiting
+                self.rate_limiter.wait_if_needed(self.base_domain)
+                
+                # Get crawl delay from robots.txt (if specified)
+                crawl_delay = self.robots_checker.get_crawl_delay(current_url, user_agent)
+                delay_to_use = max(self.delay, crawl_delay) if crawl_delay else self.delay
                     
                 logger.info(f"Crawling: {current_url}")
                 
                 try:
                     self.visited_urls.add(current_url)
-                    response = requests.get(current_url, headers=self.headers, timeout=self.timeout, verify=True)
+                    # Use retry decorator for HTTP requests
+                    response = self._fetch_url_with_retry(current_url)
                     
                     if response.status_code == 200:
                         links = self.process_page(current_url, response)
@@ -140,15 +166,37 @@ class DocuCrawler:
                     else:
                         self.stats.pages_failed += 1
                         logger.warning(f"Failed to retrieve {current_url}, status code: {response.status_code}")
+                        if self._on_error_callback:
+                            try:
+                                # Create an appropriate exception for non-200 status codes
+                                error = requests.exceptions.RequestException(
+                                    f"HTTP {response.status_code} error for {current_url}"
+                                )
+                                self._on_error_callback(current_url, error)
+                            except Exception as callback_error:
+                                logger.warning(f"Error in error callback: {callback_error}")
                 
                 except requests.exceptions.RequestException as e:
                     self.stats.pages_failed += 1
-                    logger.error(f"Request error for {current_url}: {str(e)}")
+                    error_msg = f"Request error for {current_url}: {str(e)}"
+                    logger.error(error_msg)
+                    if self._on_error_callback:
+                        try:
+                            self._on_error_callback(current_url, e)
+                        except Exception as callback_error:
+                            logger.warning(f"Error in error callback: {callback_error}")
                 except Exception as e:
                     self.stats.pages_failed += 1
-                    logger.error(f"Error processing {current_url}: {str(e)}", exc_info=True)
+                    error_msg = f"Error processing {current_url}: {str(e)}"
+                    logger.error(error_msg, exc_info=True)
+                    if self._on_error_callback:
+                        try:
+                            self._on_error_callback(current_url, e)
+                        except Exception as callback_error:
+                            logger.warning(f"Error in error callback: {callback_error}")
                 
-                time.sleep(self.delay)
+                # Use the delay (which may be overridden by robots.txt crawl_delay)
+                time.sleep(delay_to_use)
             
             self._log_stats(final=True)
             
@@ -186,3 +234,8 @@ class DocuCrawler:
             logger.info(f"Total URLs processed: {len(self.visited_urls)}")
             logger.info(f"Output directory: {os.path.abspath(self.output_dir)}")
             logger.info(f"Log file: {os.path.abspath('doc_crawler.log')}")
+    
+    @retry_on_http_error(max_retries=3, initial_delay=1.0, backoff_factor=2.0)
+    def _fetch_url_with_retry(self, url: str) -> requests.Response:
+        """Fetch URL with automatic retry on HTTP errors."""
+        return requests.get(url, headers=self.headers, timeout=self.timeout, verify=True)

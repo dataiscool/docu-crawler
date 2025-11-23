@@ -13,14 +13,14 @@ except ImportError:
 DEFAULT_CONFIG_PATHS = [
     './crawler_config.yaml',
     './config/crawler_config.yaml',
-    '~/.config/doc-crawler/config.yaml',
-    '/etc/doc-crawler/config.yaml',
+    '~/.config/docu-crawler/config.yaml',
+    '/etc/docu-crawler/config.yaml',
 ]
 
 DEFAULT_CREDENTIALS_PATHS = [
     './credentials.json',
     './config/credentials.json',
-    '~/.config/doc-crawler/credentials.json',
+    '~/.config/docu-crawler/credentials.json',
 ]
 
 def find_file(paths: list) -> Optional[str]:
@@ -31,30 +31,45 @@ def find_file(paths: list) -> Optional[str]:
             return expanded_path
     return None
 
-def load_config() -> Dict[str, Any]:
-    """Load configuration from a YAML file."""
+def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Load configuration from a YAML file.
+    
+    Args:
+        config_path: Optional path to config file. If not provided, searches default locations.
+    
+    Returns:
+        Dictionary containing configuration, or empty dict if no config found or YAML unavailable.
+    """
     if not YAML_AVAILABLE:
         logger.warning("pyyaml is not installed. Install with 'pip install docu-crawler[yaml]' to use config files.")
         return {}
     
-    config_path = find_file(DEFAULT_CONFIG_PATHS)
+    # Use provided path or search default locations
+    if config_path:
+        if not os.path.exists(config_path):
+            logger.warning(f"Config file not found: {config_path}")
+            return {}
+        file_path = os.path.expanduser(config_path)
+    else:
+        file_path = find_file(DEFAULT_CONFIG_PATHS)
     
-    if not config_path:
+    if not file_path:
         logger.debug("No config file found. Using default configuration.")
         return {}
     
     try:
-        with open(config_path, 'r') as f:
+        with open(file_path, 'r', encoding='utf-8') as f:
             config = yaml.safe_load(f)
             
         if not isinstance(config, dict):
-            logger.warning(f"Invalid config format in {config_path}. Using default configuration.")
+            logger.warning(f"Invalid config format in {file_path}. Using default configuration.")
             return {}
             
-        logger.info(f"Loaded configuration from {config_path}")
+        logger.info(f"Loaded configuration from {file_path}")
         return config
     except Exception as e:
-        logger.error(f"Error loading config from {config_path}: {str(e)}")
+        logger.error(f"Error loading config from {file_path}: {str(e)}")
         return {}
 
 def get_credentials_path() -> Optional[str]:

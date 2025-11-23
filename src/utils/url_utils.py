@@ -1,3 +1,4 @@
+import os
 from urllib.parse import urlparse
 import logging
 from typing import Set
@@ -49,7 +50,6 @@ def url_to_filepath(url: str, base_path: str, output_dir: str) -> str:
     Returns:
         The local file path
     """
-    import os
     parsed_url = urlparse(url)
     
     # Extract the path and remove the initial part matching base_path
@@ -69,7 +69,9 @@ def url_to_filepath(url: str, base_path: str, output_dir: str) -> str:
     file_path = os.path.join(output_dir, path)
     
     # Ensure the directory exists
-    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    dir_path = os.path.dirname(file_path)
+    if dir_path:  # Only create directory if path is not empty
+        os.makedirs(dir_path, exist_ok=True)
     
     # Add .md extension for Markdown files
     if not file_path.endswith('.md'):

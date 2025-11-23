@@ -1,4 +1,8 @@
 from .base import StorageBackend
+from typing import Optional, Dict, Any
+import logging
+
+logger = logging.getLogger('DocuCrawler')
 
 def get_storage_backend(config: dict) -> StorageBackend:
     """Factory function to get the appropriate storage backend."""
@@ -51,3 +55,45 @@ def get_storage_backend(config: dict) -> StorageBackend:
         
     else:
         raise ValueError(f"Unknown storage type: {storage_type}")
+
+class StorageClient:
+    """Client for handling file storage (backward compatible wrapper)."""
+    
+    def __init__(self, 
+                 use_gcs: bool = False, 
+                 bucket_name: Optional[str] = None,
+                 credentials_path: Optional[str] = None,
+                 project_id: Optional[str] = None,
+                 output_dir: str = "downloaded_docs",
+                 storage_type: Optional[str] = None,
+                 **kwargs):
+        """Initialize the storage client."""
+        config: Dict[str, Any] = {}
+        
+        if use_gcs or storage_type == 'gcs':
+            config['storage_type'] = 'gcs'
+            config['bucket'] = bucket_name
+            config['project'] = project_id
+            config['credentials'] = credentials_path
+        elif storage_type:
+            config['storage_type'] = storage_type
+            config.update(kwargs)
+        else:
+            config['storage_type'] = 'local'
+            config['output'] = output_dir
+        
+        self.backend = get_storage_backend(config)
+        self.use_gcs = use_gcs or (storage_type == 'gcs')
+        self.output_dir = output_dir
+    
+    def save_file(self, file_path: str, content: str) -> None:
+        """Save a file to the configured storage."""
+        self.backend.save_file(file_path, content)
+    
+    def exists(self, file_path: str) -> bool:
+        """Check if a file exists."""
+        return self.backend.exists(file_path)
+    
+    def get_file(self, file_path: str) -> Optional[bytes]:
+        """Retrieve file content."""
+        return self.backend.get_file(file_path)

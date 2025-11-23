@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.2] - 2025-11-23
+
+### Fixed
+- Config file loading now works with CLI arguments
+- Robots.txt checking fully integrated
+- Rate limiting and retry logic properly integrated
+- Error callbacks now work correctly
+- Fixed elapsed_time calculation in API
+- Improved import organization
+
+### Changed
+- Removed unused code and duplicate files
+- Consolidated entry points
+
 ## [0.1.1] - 2025-11-23
 
 ### Added

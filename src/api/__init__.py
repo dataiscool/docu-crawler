@@ -1,3 +1,4 @@
+import time
 from typing import Optional, Dict, Any, Callable
 from src.doc_crawler import DocuCrawler
 
@@ -28,7 +29,9 @@ def crawl(url: str,
         original_process = crawler.process_page
         def process_with_callback(url, response):
             result = original_process(url, response)
-            if result:
+            # Call callback if page was successfully processed (result is not None)
+            # Note: result can be None (error/non-HTML) or a list of links (success)
+            if result is not None:
                 on_page_crawled(url, crawler.stats.pages_processed)
             return result
         crawler.process_page = process_with_callback
@@ -38,12 +41,14 @@ def crawl(url: str,
     
     crawler.crawl()
     
+    elapsed_time = time.time() - crawler.stats.start_time
+    
     return {
         'pages_crawled': crawler.stats.pages_processed,
         'pages_failed': crawler.stats.pages_failed,
         'urls_visited': len(crawler.visited_urls),
         'bytes_downloaded': crawler.stats.bytes_downloaded,
-        'elapsed_time': crawler.stats.start_time
+        'elapsed_time': elapsed_time
     }
 
 def crawl_to_local(url: str, output_dir: str = "downloaded_docs", **kwargs) -> Dict[str, Any]:

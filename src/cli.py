@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import sys
-import os
 import logging
 from typing import Dict, Any
 import argparse
@@ -10,9 +9,6 @@ from src.utils.logger import setup_logger
 from src.utils.cli import parse_args, get_log_level
 from src.utils.config import load_config, merge_config_and_args, get_credentials_path, get_storage_config
 from src.doc_crawler import DocuCrawler
-
-WebCrawler = DocuCrawler
-DocCrawler = DocuCrawler
 
 DEFAULTS = {
     'url': None,
@@ -36,15 +32,15 @@ def run():
     """Main function to run the docu crawler from CLI."""
     args = parse_args()
     
-    config = {}
-    if not args.url:
-        config = load_config()
-        if not config.get('url'):
-            print("Error: No URL specified and no URL found in config file.")
-            print("Please provide a URL as an argument or in a config file.")
-            return 1
+    # Always load config file (use --config path if provided, otherwise search defaults)
+    config = load_config(args.config if hasattr(args, 'config') and args.config else None)
     
+    # Check if URL is required but missing
     args_dict = args_to_dict(args)
+    if not args.url and not config.get('url'):
+        print("Error: No URL specified and no URL found in config file.")
+        print("Please provide a URL as an argument or in a config file.")
+        return 1
     
     if args_dict.get('use_gcs'):
         args_dict['storage_type'] = 'gcs'
