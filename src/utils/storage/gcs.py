@@ -39,7 +39,6 @@ class GCSStorageBackend(StorageBackend):
         self.bucket_name = bucket_name
         self.project_id = project_id
         
-        # Initialize GCS client
         client_kwargs = {}
         
         if project_id:
@@ -51,7 +50,6 @@ class GCSStorageBackend(StorageBackend):
                 credentials = service_account.Credentials.from_service_account_file(credentials_path)
                 client_kwargs['credentials'] = credentials
                 
-                # If project_id not specified, try to get it from credentials
                 if not project_id and hasattr(credentials, 'project_id'):
                     logger.info(f"Using project ID from credentials: {credentials.project_id}")
                     
@@ -59,13 +57,10 @@ class GCSStorageBackend(StorageBackend):
             else:
                 raise FileNotFoundError(f"Credentials file not found: {credentials_path}")
         else:
-            # Try to use environment variables or application default credentials
             self.client = storage.Client(**client_kwargs)
         
-        # Get the bucket
         self.bucket = self.client.bucket(bucket_name)
         
-        # Check if bucket exists, create if it doesn't
         if not self.bucket.exists():
             logger.warning(f"Bucket {bucket_name} doesn't exist. Will try to create it.")
             project = project_id or self.client.project

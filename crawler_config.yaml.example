@@ -11,6 +11,7 @@ delay: 1.0
 max_pages: 0  # 0 for unlimited
 timeout: 10
 log_level: INFO
+single_file: false  # Set to true to combine all pages into one documentation.md file
 
 # Storage configuration
 # Options: local, gcs, s3, azure, sftp

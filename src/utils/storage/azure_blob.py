@@ -39,7 +39,6 @@ class AzureBlobStorageBackend(StorageBackend):
         
         self.container_name = container_name
         
-        # Initialize Azure client
         if connection_string:
             self.blob_service_client = BlobServiceClient.from_connection_string(connection_string)
         elif account_name and account_key:
@@ -59,11 +58,9 @@ class AzureBlobStorageBackend(StorageBackend):
                 "(account_name, account_key) or set AZURE_STORAGE_CONNECTION_STRING"
             )
         
-        # Get or create container
         self.container_client = self.blob_service_client.get_container_client(container_name)
         
         try:
-            # Check if container exists
             self.container_client.get_container_properties()
             logger.info(f"Successfully connected to Azure container: {container_name}")
         except Exception:
@@ -86,7 +83,6 @@ class AzureBlobStorageBackend(StorageBackend):
         try:
             blob_client = self.container_client.get_blob_client(file_path)
             
-            # Convert content to bytes if needed
             if isinstance(content, str):
                 content_bytes = content.encode('utf-8')
             elif isinstance(content, bytes):

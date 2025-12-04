@@ -27,15 +27,12 @@ setup(
         "s3": ["boto3>=1.26.0"],
         "azure": ["azure-storage-blob>=12.0.0"],
         "sftp": ["paramiko>=3.0.0"],
-        "async": ["aiohttp>=3.8.0", "aiofiles>=23.0.0"],
         "all": [
             "pyyaml>=6.0",
             "google-cloud-storage>=2.0.0",
             "boto3>=1.26.0",
             "azure-storage-blob>=12.0.0",
             "paramiko>=3.0.0",
-            "aiohttp>=3.8.0",
-            "aiofiles>=23.0.0",
         ],
     },
     entry_points={

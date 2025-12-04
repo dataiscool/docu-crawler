@@ -28,22 +28,15 @@ class LocalStorageBackend(StorageBackend):
             file_path: Relative path where the file should be saved
             content: Content to write (string, bytes, or file-like object)
         """
-        # Sanitize file path to prevent directory traversal
         safe_path = self._sanitize_path(file_path)
         full_path = self.output_dir / safe_path
-        
-        # Ensure parent directories exist
         full_path.parent.mkdir(parents=True, exist_ok=True)
         
-        # Handle different content types
         if isinstance(content, str):
-            # Write text file with UTF-8 encoding
             full_path.write_text(content, encoding='utf-8')
         elif isinstance(content, bytes):
-            # Write binary file
             full_path.write_bytes(content)
         elif hasattr(content, 'read'):
-            # File-like object
             full_path.write_bytes(content.read())
         else:
             raise ValueError(f"Unsupported content type: {type(content)}")
@@ -85,6 +78,26 @@ class LocalStorageBackend(StorageBackend):
         except Exception as e:
             logger.error(f"Error reading file {file_path}: {str(e)}")
             return None
+
+    def append_file(self, file_path: str, content: Union[str, bytes]) -> None:
+        """
+        Append content to a local file efficiently.
+        
+        Args:
+            file_path: Relative path where the file should be appended
+            content: Content to append (string or bytes)
+        """
+        safe_path = self._sanitize_path(file_path)
+        full_path = self.output_dir / safe_path
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        mode = 'a' if isinstance(content, str) else 'ab'
+        encoding = 'utf-8' if isinstance(content, str) else None
+        
+        with open(full_path, mode, encoding=encoding) as f:
+            f.write(content)
+            
+        logger.debug(f"Appended to local file: {full_path}")
     
     def _sanitize_path(self, file_path: str) -> Path:
         """
@@ -96,20 +109,15 @@ class LocalStorageBackend(StorageBackend):
         Returns:
             Sanitized Path object
         """
-        # Remove any leading slashes or dots
         path = file_path.lstrip('/').lstrip('\\')
-        
-        # Replace backslashes with forward slashes for cross-platform compatibility
         path = path.replace('\\', '/')
         
-        # Remove any .. components
         parts = []
         for part in path.split('/'):
             if part == '..':
                 if parts:
                     parts.pop()
             elif part and part != '.':
-                # Remove Windows reserved characters
                 part = part.translate(str.maketrans('', '', '<>:"|?*'))
                 if part:
                     parts.append(part)

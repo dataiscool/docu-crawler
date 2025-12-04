@@ -1,21 +1,37 @@
 import logging
 from urllib.robotparser import RobotFileParser
 from urllib.parse import urlparse
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 import time
+import requests
 
 logger = logging.getLogger('DocuCrawler')
+
+DEFAULT_CACHE_DURATION = 3600
+
+# HTTP status codes
+HTTP_OK = 200
+HTTP_UNAUTHORIZED = 401
+HTTP_FORBIDDEN = 403
 
 class RobotsTxtChecker:
     """
     Check and respect robots.txt files.
     """
     
-    def __init__(self):
-        """Initialize robots.txt checker."""
+    def __init__(self, headers: Optional[Dict[str, str]] = None, timeout: int = 10):
+        """
+        Initialize robots.txt checker.
+        
+        Args:
+            headers: Headers to use for fetching robots.txt (e.g. User-Agent)
+            timeout: Timeout in seconds for fetching robots.txt
+        """
         self.parsers: Dict[str, RobotFileParser] = {}
         self.cache_time: Dict[str, float] = {}
-        self.cache_duration = 3600  # Cache for 1 hour
+        self.cache_duration = DEFAULT_CACHE_DURATION
+        self.headers = headers or {'User-Agent': '*'}
+        self.timeout = timeout
     
     def _get_domain(self, url: str) -> str:
         """Extract domain from URL."""
@@ -31,25 +47,52 @@ class RobotsTxtChecker:
         """Get or create RobotFileParser for a domain."""
         domain = self._get_domain(url)
         
-        # Check cache
         if domain in self.parsers:
             cache_age = time.time() - self.cache_time.get(domain, 0)
             if cache_age < self.cache_duration:
                 return self.parsers[domain]
         
-        # Create new parser
         robots_url = self._get_robots_url(url)
         parser = RobotFileParser()
         parser.set_url(robots_url)
         
         try:
-            parser.read()
-            logger.debug(f"Loaded robots.txt from {robots_url}")
+            # Use requests to fetch robots.txt to respect timeouts and headers
+            response = requests.get(robots_url, headers=self.headers, timeout=self.timeout)
+            
+            if response.status_code in (HTTP_UNAUTHORIZED, HTTP_FORBIDDEN):
+                # If access forbidden, assume disallowed (standard practice)
+                # However, RobotFileParser default is allow all if read fails.
+                # To be strict: disallow all. To be permissive: allow all.
+                # Googlebot treats 403 as "full allow" or "full disallow"? 
+                # Actually, 4xx usually means "no robots.txt" -> allow.
+                # But 401/403 specifically means auth/forbidden.
+                # We'll stick to standard behavior: if we can't read it, we usually default to allow,
+                # unless we want to simulate an empty disallow list.
+                # Let's log and proceed with empty parser (allow all).
+                logger.warning(f"Access denied for robots.txt at {robots_url} ({response.status_code})")
+                
+            elif response.status_code == HTTP_OK:
+                # Decode content safely, handling encoding issues
+                try:
+                    content_text = response.text
+                except (UnicodeDecodeError, AttributeError):
+                    try:
+                        content_text = response.content.decode('utf-8')
+                    except UnicodeDecodeError:
+                        try:
+                            content_text = response.content.decode('latin-1')
+                        except UnicodeDecodeError:
+                            logger.warning(f"Could not decode robots.txt content from {robots_url}")
+                            content_text = ''
+                
+                lines = content_text.splitlines()
+                parser.parse(lines)
+                logger.debug(f"Loaded robots.txt from {robots_url}")
+                
         except Exception as e:
             logger.warning(f"Could not load robots.txt from {robots_url}: {str(e)}")
-            # Create a permissive parser if robots.txt can't be loaded
-            parser = RobotFileParser()
-            parser.set_url(robots_url)
+            # Fallback to allow all (default state of new RobotFileParser)
         
         self.parsers[domain] = parser
         self.cache_time[domain] = time.time()
@@ -80,7 +123,6 @@ class RobotsTxtChecker:
             return can_fetch
         except Exception as e:
             logger.warning(f"Error checking robots.txt for {url}: {str(e)}")
-            # Default to allowing if there's an error
             return True
     
     def get_crawl_delay(self, url: str, user_agent: str = '*') -> Optional[float]:

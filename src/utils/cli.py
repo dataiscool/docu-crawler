@@ -20,15 +20,17 @@ def parse_args() -> argparse.Namespace:
                         help='Maximum number of pages to download (0 for unlimited, default: 0)')
     parser.add_argument('--timeout', type=int,
                         help='Request timeout in seconds (default: 10)')
+    parser.add_argument('--single-file', action='store_true',
+                        help='Combine all crawled pages into a single Markdown file (default: False)')
+    parser.add_argument('--frontmatter', action='store_true',
+                        help='Add YAML frontmatter to Markdown files (default: False)')
     
-    # Storage options
     storage_group = parser.add_argument_group('Storage options')
     storage_group.add_argument('--storage-type', 
                               choices=['local', 'gcs', 's3', 'azure', 'sftp'],
                               default='local',
                               help='Storage backend type (default: local)')
     
-    # GCS options (backward compatibility)
     gcs_group = parser.add_argument_group('Google Cloud Storage options')
     gcs_group.add_argument('--use-gcs', action='store_true',
                            help='Store files in Google Cloud Storage (deprecated: use --storage-type gcs)')
@@ -39,7 +41,6 @@ def parse_args() -> argparse.Namespace:
     gcs_group.add_argument('--credentials', 
                            help='Path to Google Cloud credentials JSON file')
     
-    # AWS S3 options
     s3_group = parser.add_argument_group('AWS S3 Storage options')
     s3_group.add_argument('--s3-bucket', 
                           help='S3 bucket name (required if --storage-type s3)')
@@ -48,14 +49,12 @@ def parse_args() -> argparse.Namespace:
     s3_group.add_argument('--s3-endpoint-url',
                           help='Custom S3 endpoint URL (for S3-compatible services)')
     
-    # Azure Blob Storage options
     azure_group = parser.add_argument_group('Azure Blob Storage options')
     azure_group.add_argument('--azure-container',
                              help='Azure container name (required if --storage-type azure)')
     azure_group.add_argument('--azure-connection-string',
                              help='Azure storage connection string')
     
-    # SFTP options
     sftp_group = parser.add_argument_group('SFTP Storage options')
     sftp_group.add_argument('--sftp-host',
                             help='SFTP server hostname (required if --storage-type sftp)')
@@ -70,7 +69,6 @@ def parse_args() -> argparse.Namespace:
     sftp_group.add_argument('--sftp-remote-path',
                             help='Base remote path for SFTP storage')
     
-    # Config file options
     config_group = parser.add_argument_group('Configuration options')
     config_group.add_argument('--config', 
                               help='Path to configuration file (default: searches in standard locations)')

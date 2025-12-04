@@ -41,24 +41,20 @@ class RateLimiter:
             now = time.time()
             elapsed = now - self.last_update[key]
             
-            # Add tokens based on elapsed time
             tokens_to_add = (elapsed / self.per) * self.rate
             self.tokens[key] = min(self.tokens[key] + tokens_to_add, self.rate)
             self.last_update[key] = now
             
-            # If no tokens available, wait
             if self.tokens[key] < 1.0:
                 wait_time = (1.0 - self.tokens[key]) * (self.per / self.rate)
                 logger.debug(f"Rate limit reached for {key}, waiting {wait_time:.2f}s")
                 time.sleep(wait_time)
-                # Update tokens after waiting
                 now = time.time()
                 elapsed = now - self.last_update[key]
                 tokens_to_add = (elapsed / self.per) * self.rate
                 self.tokens[key] = min(self.tokens[key] + tokens_to_add, self.rate)
                 self.last_update[key] = now
             
-            # Consume a token
             self.tokens[key] -= 1.0
 
 class SimpleRateLimiter:

@@ -43,7 +43,6 @@ class S3StorageBackend(StorageBackend):
         self.bucket_name = bucket_name
         self.region_name = region_name or os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
         
-        # Initialize S3 client
         client_kwargs = {}
         
         if access_key_id:
@@ -71,7 +70,6 @@ class S3StorageBackend(StorageBackend):
                 "or set AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY environment variables"
             )
         
-        # Check if bucket exists
         try:
             self.s3_client.head_bucket(Bucket=bucket_name)
             logger.info(f"Successfully connected to S3 bucket: {bucket_name}")
@@ -103,7 +101,6 @@ class S3StorageBackend(StorageBackend):
             content: Content to write (string, bytes, or file-like object)
         """
         try:
-            # Convert content to bytes if needed
             if isinstance(content, str):
                 content_bytes = content.encode('utf-8')
             elif isinstance(content, bytes):

@@ -41,3 +41,31 @@ class StorageBackend(ABC):
         """
         pass
 
+    def append_file(self, file_path: str, content: Union[str, bytes]) -> None:
+        """
+        Append content to a file. 
+        
+        Default implementation is inefficient (read-modify-write) and not atomic.
+        Subclasses should override with efficient implementation if possible.
+        
+        Args:
+            file_path: Path where the file should be appended
+            content: Content to append (string or bytes)
+        """
+        existing = self.get_file(file_path)
+        
+        if existing is None:
+            self.save_file(file_path, content)
+            return
+
+        if isinstance(content, str):
+            # Try to decode existing content as utf-8 if we're appending string
+            try:
+                new_content = existing.decode('utf-8') + content
+                self.save_file(file_path, new_content)
+            except UnicodeDecodeError:
+                # Fallback to bytes if mixed
+                self.save_file(file_path, existing + content.encode('utf-8'))
+        else:
+             self.save_file(file_path, existing + content)
+

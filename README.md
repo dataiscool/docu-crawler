@@ -15,22 +15,23 @@
 
 ## Why Choose docu-crawler?
 
-- ✅ **Minimal Dependencies**: Only requires `requests` and `beautifulsoup4` for core functionality
-- ✅ **Easy to Use**: Simple Python API and CLI interface
-- ✅ **Production Ready**: Built-in retry logic, rate limiting, and error handling
-- ✅ **Extensible**: Plugin-based storage system, easy to add custom backends
-- ✅ **Cross-Platform**: Works on Linux, Windows, and macOS
+- **Minimal Dependencies**: Only requires `requests` and `beautifulsoup4` for core functionality
+- **Easy to Use**: Simple Python API and CLI interface
+- **Production Ready**: Built-in retry logic, rate limiting, and error handling
+- **Extensible**: Plugin-based storage system, easy to add custom backends
+- **Cross-Platform**: Works on Linux, Windows, and macOS
 
 ## Key Features
 
-- 🚀 **Lightweight**: Minimal dependencies (only `requests` and `beautifulsoup4` required)
-- ☁️ **Multi-Cloud Storage**: Support for local filesystem, AWS S3, Google Cloud Storage, Azure Blob Storage, and SFTP
-- 🔄 **Flexible API**: Use as a Python library or CLI tool
-- 📝 **HTML to Markdown**: Intelligent conversion preserving structure and formatting
-- 🤖 **Robots.txt Support**: Respects robots.txt and crawl-delay directives
-- ⚡ **Performance**: Configurable rate limiting and retry logic
-- 🛡️ **Cross-Platform**: Works on Linux, Windows, and macOS
-- 📦 **Optional Dependencies**: Install only what you need
+- **Lightweight**: Minimal dependencies (only `requests` and `beautifulsoup4` required)
+- **Multi-Cloud Storage**: Support for local filesystem, AWS S3, Google Cloud Storage, Azure Blob Storage, and SFTP
+- **Flexible API**: Use as a Python library or CLI tool
+- **HTML to Markdown**: Intelligent conversion preserving structure and formatting
+- **Robots.txt Support**: Respects robots.txt and crawl-delay directives
+- **Sitemap Support**: Automatically detects and crawls pages from sitemap.xml
+- **Performance**: Configurable rate limiting and retry logic
+- **Cross-Platform**: Works on Linux, Windows, and macOS
+- **Optional Dependencies**: Install only what you need
 
 ## Installation
 
@@ -50,7 +51,6 @@ pip install docu-crawler[s3]        # AWS S3 storage
 pip install docu-crawler[gcs]       # Google Cloud Storage
 pip install docu-crawler[azure]     # Azure Blob Storage
 pip install docu-crawler[sftp]      # SFTP storage
-pip install docu-crawler[async]      # Async support
 pip install docu-crawler[all]        # Install everything
 ```
 
@@ -68,7 +68,7 @@ print(f"Crawled {result['pages_crawled']} pages")
 ### Command Line Interface
 
 ```bash
-docu-crawler https://docs.example.com --output my-docs --delay 2 --max-pages 100
+docu-crawler https://docs.example.com --output my-docs --delay 2 --max-pages 100 --single-file --frontmatter
 ```
 
 ## Usage Examples
@@ -207,24 +207,167 @@ Main crawler class for programmatic use.
 from docu_crawler import DocuCrawler
 
 crawler = DocuCrawler(
-    start_url: str,
-    output_dir: str = "downloaded_docs",
-    delay: float = 1.0,
-    max_pages: int = 0,
-    timeout: int = 10,
-    storage_config: Optional[Dict[str, Any]] = None
+    start_url: str,                    # Starting URL (required, must be HTTP/HTTPS)
+    output_dir: str = "downloaded_docs", # Output directory for local storage
+    delay: float = 1.0,                 # Delay between requests in seconds
+    max_pages: int = 0,                 # Maximum pages to crawl (0 = unlimited)
+    timeout: int = 10,                  # Request timeout in seconds
+    storage_config: Optional[Dict[str, Any]] = None,  # Storage configuration dict
+    single_file: bool = False           # Combine all output into one file
 )
 crawler.crawl()
 ```
 
+**Parameters:**
+- `start_url` (str): Starting URL for crawling. Must be a valid HTTP or HTTPS URL.
+- `output_dir` (str): Directory where files will be saved (default: "downloaded_docs")
+- `delay` (float): Delay between requests in seconds (default: 1.0, must be >= 0)
+- `max_pages` (int): Maximum number of pages to crawl. 0 means unlimited (default: 0, must be >= 0)
+- `timeout` (int): Request timeout in seconds (default: 10, must be > 0)
+- `storage_config` (dict, optional): Storage configuration dictionary. If None, uses local storage.
+- `single_file` (bool): Whether to combine all crawled content into a single `documentation.md` file (default: False)
+
+**Raises:**
+- `InvalidURLError`: If start_url is invalid
+- `ValueError`: If other parameters are invalid
+
+**Methods:**
+- `crawl()`: Start the crawling process. Saves converted Markdown files to configured storage.
+
 ### Convenience Functions
 
-- `crawl(url, output_dir, delay, max_pages, timeout, storage_config, on_page_crawled, on_error)` - General-purpose crawl function
-- `crawl_to_local(url, output_dir, **kwargs)` - Crawl to local filesystem
-- `crawl_to_s3(url, bucket, region=None, **kwargs)` - Crawl to AWS S3
-- `crawl_to_gcs(url, bucket, project=None, credentials=None, **kwargs)` - Crawl to Google Cloud Storage
-- `crawl_to_azure(url, container, connection_string=None, **kwargs)` - Crawl to Azure Blob Storage
-- `crawl_to_sftp(url, host, user, password=None, port=22, key_file=None, remote_path='', **kwargs)` - Crawl via SFTP
+All convenience functions return a dictionary with crawl results:
+
+```python
+{
+    'pages_crawled': int,      # Number of pages successfully crawled
+    'pages_failed': int,       # Number of pages that failed
+    'urls_visited': int,       # Total number of URLs visited
+    'bytes_downloaded': int,   # Total bytes downloaded
+    'elapsed_time': float      # Total elapsed time in seconds
+}
+```
+
+#### `crawl()`
+
+General-purpose crawl function with full control.
+
+```python
+from docu_crawler import crawl
+
+result = crawl(
+    url: str,                              # Starting URL
+    output_dir: str = "downloaded_docs",   # Output directory
+    delay: float = 1.0,                    # Delay between requests
+    max_pages: int = 0,                    # Max pages (0 = unlimited)
+    timeout: int = 10,                     # Request timeout
+    storage_config: Optional[Dict] = None,  # Storage config
+    on_page_crawled: Optional[Callable] = None,  # Callback(url, page_count)
+    on_error: Optional[Callable] = None    # Callback(url, error)
+)
+```
+
+**Callbacks:**
+- `on_page_crawled(url: str, page_count: int)`: Called when a page is successfully crawled
+- `on_error(url: str, error: Exception)`: Called when an error occurs
+
+#### `crawl_to_local()`
+
+Crawl website and save to local filesystem.
+
+```python
+from docu_crawler import crawl_to_local
+
+result = crawl_to_local(
+    url: str,
+    output_dir: str = "downloaded_docs",
+    **kwargs  # Additional crawl() parameters
+)
+```
+
+#### `crawl_to_s3()`
+
+Crawl website and save to AWS S3.
+
+```python
+from docu_crawler import crawl_to_s3
+
+result = crawl_to_s3(
+    url: str,
+    bucket: str,              # S3 bucket name (required)
+    region: Optional[str] = None,  # AWS region
+    **kwargs  # Additional crawl() parameters
+)
+```
+
+**Note:** Requires `boto3`. Install with `pip install docu-crawler[s3]`
+
+#### `crawl_to_gcs()`
+
+Crawl website and save to Google Cloud Storage.
+
+```python
+from docu_crawler import crawl_to_gcs
+
+result = crawl_to_gcs(
+    url: str,
+    bucket: str,                    # GCS bucket name (required)
+    project: Optional[str] = None,  # GCP project ID
+    credentials: Optional[str] = None,  # Path to credentials JSON
+    **kwargs  # Additional crawl() parameters
+)
+```
+
+**Note:** Requires `google-cloud-storage`. Install with `pip install docu-crawler[gcs]`
+
+#### `crawl_to_azure()`
+
+Crawl website and save to Azure Blob Storage.
+
+```python
+from docu_crawler import crawl_to_azure
+
+result = crawl_to_azure(
+    url: str,
+    container: str,                      # Azure container name (required)
+    connection_string: Optional[str] = None,  # Azure connection string
+    **kwargs  # Additional crawl() parameters
+)
+```
+
+**Note:** Requires `azure-storage-blob`. Install with `pip install docu-crawler[azure]`
+
+#### `crawl_to_sftp()`
+
+Crawl website and save via SFTP.
+
+```python
+from docu_crawler import crawl_to_sftp
+
+result = crawl_to_sftp(
+    url: str,
+    host: str,                      # SFTP server hostname (required)
+    user: str,                      # SFTP username (required)
+    password: Optional[str] = None,  # SFTP password
+    port: int = 22,                 # SFTP port
+    key_file: Optional[str] = None,  # Path to SSH key file
+    remote_path: str = '',          # Base remote path
+    **kwargs  # Additional crawl() parameters
+)
+```
+
+**Note:** Requires `paramiko`. Install with `pip install docu-crawler[sftp]`
+
+### Exceptions
+
+The library defines custom exceptions:
+
+- `DocuCrawlerError`: Base exception for all docu-crawler errors
+- `InvalidURLError`: Raised when an invalid URL is provided
+- `ContentTooLargeError`: Raised when content exceeds maximum size limit
+- `ConfigurationError`: Raised when there's a configuration error
+- `StorageError`: Raised when there's a storage operation error
+- `CrawlerError`: Raised when there's a crawler operation error
 
 ## Configuration
 
@@ -259,18 +402,40 @@ Config file locations (checked in order):
 
 ## Advanced Features
 
+### Sitemap Support
+
+docu-crawler automatically detects and uses sitemaps if:
+1. The start URL ends with `.xml` (e.g., `https://example.com/sitemap.xml`)
+2. The URL contains "sitemap"
+
+This ensures comprehensive coverage of all documentation pages.
+
+### YAML Frontmatter
+
+Use the `--frontmatter` flag (CLI) or `include_frontmatter=True` (Python) to add metadata to each Markdown file:
+
+```yaml
+---
+title: "Page Title"
+source: "https://example.com/page"
+date: 2023-10-27
+---
+```
+
+This is essential for RAG (Retrieval-Augmented Generation) systems and LLM indexing.
+
 ### Robots.txt Support
 
 Automatically respects `robots.txt` files and crawl-delay directives.
 
 ### Rate Limiting
 
-Built-in rate limiting to respect server limits:
+Built-in rate limiting to respect server limits. The crawler automatically uses rate limiting based on the delay parameter and robots.txt crawl-delay directives. For custom rate limiting:
 
 ```python
-from docu_crawler.utils.rate_limiter import RateLimiter
+from docu_crawler.utils.rate_limiter import SimpleRateLimiter
 
-limiter = RateLimiter(rate=10, per=60)  # 10 requests per minute
+limiter = SimpleRateLimiter(delay=1.0)  # 1 second delay between requests
 limiter.wait_if_needed(domain="example.com")
 ```
 
@@ -339,6 +504,20 @@ docu-crawler is designed for efficiency with configurable rate limiting and retr
 **YAML Config Error**: Install YAML support: `pip install docu-crawler[yaml]`
 
 **SSL Certificate Error**: The crawler uses proper SSL verification by default.
+
+**InvalidURLError**: Ensure the URL starts with `http://` or `https://`
+
+**ContentTooLargeError**: The default maximum content size is 10MB. Large files are skipped to prevent memory issues.
+
+**Connection Errors**: Check your network connection and ensure the target website is accessible. The crawler will retry failed requests up to 3 times.
+
+## Limitations
+
+- **JavaScript-rendered content**: The crawler does not execute JavaScript, so content rendered dynamically by JavaScript will not be captured.
+- **Authentication**: The crawler does not support authenticated sessions or login forms.
+- **Rate limiting**: Always respects robots.txt and implements rate limiting, but some sites may still block aggressive crawling.
+- **Large files**: Files larger than 10MB are skipped to prevent memory issues.
+- **Content types**: Only HTML content is processed. Binary files, images, PDFs, etc. are skipped.
 
 ## Contributing
 

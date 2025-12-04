@@ -11,16 +11,14 @@ def setup_logger(log_file="doc_crawler.log", log_level=logging.INFO):
     Returns:
         Configured logger instance
     """
-    # Configure the logger
     logging.basicConfig(
         level=log_level,
         format='%(asctime)s - %(levelname)s - %(message)s',
         handlers=[
             logging.FileHandler(log_file),
-            logging.StreamHandler()  # This adds console output
+            logging.StreamHandler()
         ]
     )
     
-    # Create and return the logger
     logger = logging.getLogger('DocuCrawler')
     return logger

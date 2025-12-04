@@ -9,12 +9,10 @@ Main exports:
 
 __version__ = '1.0.0'
 
-# Backward compatibility aliases
 from .doc_crawler import DocuCrawler
 DocCrawler = DocuCrawler
 WebCrawler = DocuCrawler
 
-# Import API functions
 from .api import (
     crawl,
     crawl_to_local,
@@ -22,6 +20,15 @@ from .api import (
     crawl_to_gcs,
     crawl_to_azure,
     crawl_to_sftp
+)
+
+from .exceptions import (
+    DocuCrawlerError,
+    ConfigurationError,
+    StorageError,
+    CrawlerError,
+    ContentTooLargeError,
+    InvalidURLError
 )
 
 __all__ = [
@@ -34,5 +41,11 @@ __all__ = [
     'crawl_to_s3',
     'crawl_to_gcs',
     'crawl_to_azure',
-    'crawl_to_sftp'
+    'crawl_to_sftp',
+    'DocuCrawlerError',
+    'ConfigurationError',
+    'StorageError',
+    'CrawlerError',
+    'ContentTooLargeError',
+    'InvalidURLError'
 ]

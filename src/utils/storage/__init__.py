@@ -97,3 +97,7 @@ class StorageClient:
     def get_file(self, file_path: str) -> Optional[bytes]:
         """Retrieve file content."""
         return self.backend.get_file(file_path)
+
+    def append_file(self, file_path: str, content: str) -> None:
+        """Append content to a file in the configured storage."""
+        self.backend.append_file(file_path, content)

@@ -32,6 +32,7 @@ venv.bak/
 # IDE specific files
 .idea/
 .vscode/
+.cursor/
 *.swp
 *.swo
 

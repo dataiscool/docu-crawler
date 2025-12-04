@@ -50,11 +50,9 @@ class SFTPStorageBackend(StorageBackend):
         self.key_filename = key_filename or os.environ.get('SFTP_KEY_FILE')
         self.remote_path = remote_path.rstrip('/')
         
-        # Initialize SSH client
         self.ssh_client = SSHClient()
         self.ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         
-        # Connect to SFTP server
         try:
             self.ssh_client.connect(
                 hostname=hostname,
@@ -67,7 +65,6 @@ class SFTPStorageBackend(StorageBackend):
             self.sftp_client = self.ssh_client.open_sftp()
             logger.info(f"Successfully connected to SFTP server: {hostname}:{port}")
             
-            # Ensure remote path exists
             if self.remote_path:
                 self._ensure_remote_directory(self.remote_path)
         except Exception as e:
@@ -79,7 +76,6 @@ class SFTPStorageBackend(StorageBackend):
         try:
             self.sftp_client.stat(remote_dir)
         except IOError:
-            # Directory doesn't exist, create it
             parts = remote_dir.strip('/').split('/')
             current_path = ''
             for part in parts:
@@ -100,18 +96,15 @@ class SFTPStorageBackend(StorageBackend):
             content: Content to write (string, bytes, or file-like object)
         """
         try:
-            # Construct full remote path
             if self.remote_path:
                 full_remote_path = f"{self.remote_path}/{file_path}"
             else:
                 full_remote_path = file_path
             
-            # Ensure parent directories exist
             remote_dir = '/'.join(full_remote_path.split('/')[:-1])
             if remote_dir:
                 self._ensure_remote_directory(remote_dir)
             
-            # Convert content to bytes if needed
             if isinstance(content, str):
                 content_bytes = content.encode('utf-8')
             elif isinstance(content, bytes):
@@ -121,7 +114,6 @@ class SFTPStorageBackend(StorageBackend):
             else:
                 raise ValueError(f"Unsupported content type: {type(content)}")
             
-            # Write file via SFTP
             with self.sftp_client.open(full_remote_path, 'wb') as remote_file:
                 remote_file.write(content_bytes)
             

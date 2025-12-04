@@ -17,7 +17,7 @@ Thank you for considering contributing to Docu Crawler! This document provides g
 
 3. Install development dependencies:
    ```bash
-   pip install pytest flake8
+   pip install pytest flake8 mypy types-requests types-beautifulsoup4
    ```
 
 ## Running Tests
@@ -27,11 +27,18 @@ Run tests using pytest:
 pytest
 ```
 
-## Code Style
+## Code Quality
 
-This project follows PEP 8 style guidelines. You can check your code with:
+This project follows PEP 8 style guidelines and uses type hints.
+
+Check code style:
 ```bash
 flake8 src
+```
+
+Check type hints:
+```bash
+mypy src
 ```
 
 ## Making Changes

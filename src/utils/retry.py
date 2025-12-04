@@ -36,7 +36,6 @@ def retry_with_backoff(
                 except Exception as e:
                     last_exception = e
                     
-                    # Check if we should retry this exception
                     if retry_on and not isinstance(e, retry_on):
                         raise
                     
@@ -51,7 +50,6 @@ def retry_with_backoff(
                         logger.error(f"All {max_retries + 1} attempts failed for {func.__name__}")
                         raise last_exception
             
-            # Should never reach here, but just in case
             if last_exception:
                 raise last_exception
             raise RuntimeError("Unexpected error in retry decorator")
@@ -82,11 +80,9 @@ def retry_on_http_error(
             for attempt in range(max_retries + 1):
                 try:
                     result = func(*args, **kwargs)
-                    # Check if result has status_code attribute (like requests.Response)
                     if hasattr(result, 'status_code'):
                         if result.status_code in retry_status_codes:
                             if attempt < max_retries:
-                                # Check for Retry-After header
                                 retry_after = result.headers.get('Retry-After')
                                 if retry_after:
                                     try:

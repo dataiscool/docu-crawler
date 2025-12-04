@@ -1,6 +1,6 @@
 import os
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 logger = logging.getLogger('DocuCrawler')
 
@@ -23,7 +23,7 @@ DEFAULT_CREDENTIALS_PATHS = [
     '~/.config/docu-crawler/credentials.json',
 ]
 
-def find_file(paths: list) -> Optional[str]:
+def find_file(paths: List[str]) -> Optional[str]:
     """Search for a file in multiple locations."""
     for path in paths:
         expanded_path = os.path.expanduser(path)
@@ -45,7 +45,6 @@ def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
         logger.warning("pyyaml is not installed. Install with 'pip install docu-crawler[yaml]' to use config files.")
         return {}
     
-    # Use provided path or search default locations
     if config_path:
         if not os.path.exists(config_path):
             logger.warning(f"Config file not found: {config_path}")

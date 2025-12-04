@@ -21,7 +21,9 @@ DEFAULTS = {
     'use_gcs': False,
     'bucket': None,
     'project': None,
-    'credentials': None
+    'credentials': None,
+    'single_file': False,
+    'frontmatter': False
 }
 
 def args_to_dict(args: argparse.Namespace) -> Dict[str, Any]:
@@ -31,11 +33,7 @@ def args_to_dict(args: argparse.Namespace) -> Dict[str, Any]:
 def run():
     """Main function to run the docu crawler from CLI."""
     args = parse_args()
-    
-    # Always load config file (use --config path if provided, otherwise search defaults)
     config = load_config(args.config if hasattr(args, 'config') and args.config else None)
-    
-    # Check if URL is required but missing
     args_dict = args_to_dict(args)
     if not args.url and not config.get('url'):
         print("Error: No URL specified and no URL found in config file.")
@@ -82,13 +80,20 @@ def run():
         
         storage_config = get_storage_config(params)
         
+        html_config_overrides = {
+            'single_file': params.get('single_file', False),
+            'include_frontmatter': params.get('frontmatter', False)
+        }
+        
         crawler = DocuCrawler(
             start_url=params['url'], 
             output_dir=params.get('output', 'downloaded_docs'), 
             delay=params['delay'],
             max_pages=params['max_pages'],
             timeout=params['timeout'],
-            storage_config=storage_config
+            storage_config=storage_config,
+            single_file=params.get('single_file', False),
+            html_config_overrides=html_config_overrides
         )
         crawler.crawl()
     except KeyboardInterrupt:

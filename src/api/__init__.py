@@ -15,29 +15,48 @@ def crawl(url: str,
           storage_config: Optional[Dict[str, Any]] = None,
           on_page_crawled: Optional[Callable[[str, int], None]] = None,
           on_error: Optional[Callable[[str, Exception], None]] = None) -> Dict[str, Any]:
-    """Crawl a website and return results."""
+    """
+    Crawl a website and convert HTML pages to Markdown.
+    
+    Args:
+        url: Starting URL for crawling (must be valid HTTP/HTTPS URL)
+        output_dir: Directory where files will be saved (default: "downloaded_docs")
+        delay: Delay between requests in seconds (default: 1.0)
+        max_pages: Maximum number of pages to crawl, 0 for unlimited (default: 0)
+        timeout: Request timeout in seconds (default: 10)
+        storage_config: Storage configuration dictionary (default: None, uses local storage)
+        on_page_crawled: Optional callback function called when a page is successfully crawled.
+                        Receives (url: str, page_count: int) as arguments.
+        on_error: Optional callback function called when an error occurs.
+                  Receives (url: str, error: Exception) as arguments.
+    
+    Returns:
+        Dictionary with crawl results containing:
+        - pages_crawled (int): Number of pages successfully crawled
+        - pages_failed (int): Number of pages that failed
+        - urls_visited (int): Total number of URLs visited
+        - bytes_downloaded (int): Total bytes downloaded
+        - elapsed_time (float): Total elapsed time in seconds
+    
+    Raises:
+        InvalidURLError: If URL is invalid
+        ValueError: If other parameters are invalid
+        ContentTooLargeError: If content exceeds maximum size limit
+    
+    Example:
+        >>> result = crawl("https://docs.example.com", output_dir="my_docs")
+        >>> print(f"Crawled {result['pages_crawled']} pages")
+    """
     crawler = DocuCrawler(
         start_url=url,
         output_dir=output_dir,
         delay=delay,
         max_pages=max_pages,
         timeout=timeout,
-        storage_config=storage_config
+        storage_config=storage_config,
+        on_page_crawled=on_page_crawled,
+        on_error=on_error
     )
-    
-    if on_page_crawled:
-        original_process = crawler.process_page
-        def process_with_callback(url, response):
-            result = original_process(url, response)
-            # Call callback if page was successfully processed (result is not None)
-            # Note: result can be None (error/non-HTML) or a list of links (success)
-            if result is not None:
-                on_page_crawled(url, crawler.stats.pages_processed)
-            return result
-        crawler.process_page = process_with_callback
-    
-    if on_error:
-        crawler._on_error_callback = on_error
     
     crawler.crawl()
     
@@ -52,11 +71,36 @@ def crawl(url: str,
     }
 
 def crawl_to_local(url: str, output_dir: str = "downloaded_docs", **kwargs) -> Dict[str, Any]:
-    """Crawl website to local filesystem."""
+    """
+    Crawl website and save to local filesystem.
+    
+    Args:
+        url: Starting URL for crawling
+        output_dir: Directory where files will be saved
+        **kwargs: Additional arguments passed to crawl() function
+    
+    Returns:
+        Dictionary with crawl results (see crawl() for details)
+    """
     return crawl(url, output_dir=output_dir, storage_config={'storage_type': 'local', 'output': output_dir}, **kwargs)
 
 def crawl_to_s3(url: str, bucket: str, region: Optional[str] = None, **kwargs) -> Dict[str, Any]:
-    """Crawl website to AWS S3."""
+    """
+    Crawl website and save to AWS S3.
+    
+    Args:
+        url: Starting URL for crawling
+        bucket: S3 bucket name (required)
+        region: AWS region (optional, uses AWS_DEFAULT_REGION env var if not provided)
+        **kwargs: Additional arguments passed to crawl() function
+    
+    Returns:
+        Dictionary with crawl results (see crawl() for details)
+    
+    Note:
+        Requires boto3. Install with: pip install docu-crawler[s3]
+        Credentials via AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY env vars or AWS credentials file.
+    """
     storage_config = {
         'storage_type': 's3',
         's3_bucket': bucket,
@@ -65,7 +109,22 @@ def crawl_to_s3(url: str, bucket: str, region: Optional[str] = None, **kwargs) -
     return crawl(url, storage_config=storage_config, **kwargs)
 
 def crawl_to_gcs(url: str, bucket: str, project: Optional[str] = None, credentials: Optional[str] = None, **kwargs) -> Dict[str, Any]:
-    """Crawl website to Google Cloud Storage."""
+    """
+    Crawl website and save to Google Cloud Storage.
+    
+    Args:
+        url: Starting URL for crawling
+        bucket: GCS bucket name (required)
+        project: GCP project ID (optional, uses project from credentials if not provided)
+        credentials: Path to credentials JSON file (optional, uses GOOGLE_APPLICATION_CREDENTIALS env var if not provided)
+        **kwargs: Additional arguments passed to crawl() function
+    
+    Returns:
+        Dictionary with crawl results (see crawl() for details)
+    
+    Note:
+        Requires google-cloud-storage. Install with: pip install docu-crawler[gcs]
+    """
     storage_config = {
         'storage_type': 'gcs',
         'bucket': bucket,
@@ -75,7 +134,21 @@ def crawl_to_gcs(url: str, bucket: str, project: Optional[str] = None, credentia
     return crawl(url, storage_config=storage_config, **kwargs)
 
 def crawl_to_azure(url: str, container: str, connection_string: Optional[str] = None, **kwargs) -> Dict[str, Any]:
-    """Crawl website to Azure Blob Storage."""
+    """
+    Crawl website and save to Azure Blob Storage.
+    
+    Args:
+        url: Starting URL for crawling
+        container: Azure container name (required)
+        connection_string: Azure storage connection string (optional, uses AZURE_STORAGE_CONNECTION_STRING env var if not provided)
+        **kwargs: Additional arguments passed to crawl() function
+    
+    Returns:
+        Dictionary with crawl results (see crawl() for details)
+    
+    Note:
+        Requires azure-storage-blob. Install with: pip install docu-crawler[azure]
+    """
     storage_config = {
         'storage_type': 'azure',
         'azure_container': container,
@@ -85,7 +158,25 @@ def crawl_to_azure(url: str, container: str, connection_string: Optional[str] = 
 
 def crawl_to_sftp(url: str, host: str, user: str, password: Optional[str] = None, 
                   port: int = 22, key_file: Optional[str] = None, remote_path: str = '', **kwargs) -> Dict[str, Any]:
-    """Crawl website via SFTP."""
+    """
+    Crawl website and save via SFTP.
+    
+    Args:
+        url: Starting URL for crawling
+        host: SFTP server hostname (required)
+        user: SFTP username (required)
+        password: SFTP password (optional if using key_file)
+        port: SFTP port (default: 22)
+        key_file: Path to SSH private key file (optional, uses SFTP_KEY_FILE env var if not provided)
+        remote_path: Base remote path for SFTP storage (default: '')
+        **kwargs: Additional arguments passed to crawl() function
+    
+    Returns:
+        Dictionary with crawl results (see crawl() for details)
+    
+    Note:
+        Requires paramiko. Install with: pip install docu-crawler[sftp]
+    """
     storage_config = {
         'storage_type': 'sftp',
         'sftp_host': host,
