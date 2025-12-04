@@ -45,7 +45,9 @@ class TestSitemapParser(unittest.TestCase):
         </sitemapindex>
         """
         urls = set()
-        self.parser._parse_index(xml_content, urls)
+        visited = set()
+        max_depth = 10
+        self.parser._parse_index(xml_content, urls, visited, max_depth)
         
         # verify sub-sitemap was fetched
         self.mock_session.get.assert_called_with("http://example.com/sitemap1.xml", timeout=30)
