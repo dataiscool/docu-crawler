@@ -84,5 +84,11 @@ def get_log_level(level_name: str) -> int:
         
     Returns:
         The corresponding logging level constant
+        
+    Raises:
+        AttributeError: If the log level name is invalid
     """
-    return getattr(logging, level_name)
+    level = getattr(logging, level_name.upper(), None)
+    if level is None:
+        raise AttributeError(f"Invalid log level: {level_name}")
+    return level

@@ -47,6 +47,7 @@ class StorageBackend(ABC):
         
         Default implementation is inefficient (read-modify-write) and not atomic.
         Subclasses should override with efficient implementation if possible.
+        Works everywhere but slow and reliable
         
         Args:
             file_path: Path where the file should be appended
@@ -59,13 +60,13 @@ class StorageBackend(ABC):
             return
 
         if isinstance(content, str):
-            # Try to decode existing content as utf-8 if we're appending string
+            # Decode existing content so we can append strings
             try:
                 new_content = existing.decode('utf-8') + content
                 self.save_file(file_path, new_content)
             except UnicodeDecodeError:
-                # Fallback to bytes if mixed
+                # Not utf-8, just append as bytes
                 self.save_file(file_path, existing + content.encode('utf-8'))
         else:
-             self.save_file(file_path, existing + content)
+            self.save_file(file_path, existing + content)
 

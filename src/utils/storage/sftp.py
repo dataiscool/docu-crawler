@@ -101,9 +101,11 @@ class SFTPStorageBackend(StorageBackend):
             else:
                 full_remote_path = file_path
             
-            remote_dir = '/'.join(full_remote_path.split('/')[:-1])
-            if remote_dir:
-                self._ensure_remote_directory(remote_dir)
+            path_parts = full_remote_path.split('/')
+            if len(path_parts) > 1:
+                remote_dir = '/'.join(path_parts[:-1])
+                if remote_dir:
+                    self._ensure_remote_directory(remote_dir)
             
             if isinstance(content, str):
                 content_bytes = content.encode('utf-8')

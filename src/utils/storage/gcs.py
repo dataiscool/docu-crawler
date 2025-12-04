@@ -1,6 +1,6 @@
 import os
 import logging
-from typing import Optional
+from typing import Optional, Union, BinaryIO
 from .base import StorageBackend
 
 logger = logging.getLogger('DocuCrawler')
@@ -76,17 +76,26 @@ class GCSStorageBackend(StorageBackend):
         
         logger.info(f"Successfully connected to GCS bucket: {bucket_name}")
     
-    def save_file(self, file_path: str, content: str) -> None:
+    def save_file(self, file_path: str, content: Union[str, bytes, BinaryIO]) -> None:
         """
         Save content to GCS.
         
         Args:
             file_path: Path where the file should be saved in the bucket
-            content: Content to write (string)
+            content: Content to write (string, bytes, or file-like object)
         """
         try:
+            if isinstance(content, str):
+                content_bytes = content.encode('utf-8')
+            elif isinstance(content, bytes):
+                content_bytes = content
+            elif hasattr(content, 'read'):
+                content_bytes = content.read()
+            else:
+                raise ValueError(f"Unsupported content type: {type(content)}")
+            
             blob = self.bucket.blob(file_path)
-            blob.upload_from_string(content, content_type='text/markdown; charset=utf-8')
+            blob.upload_from_string(content_bytes, content_type='text/markdown; charset=utf-8')
             logger.debug(f"Saved to GCS: gs://{self.bucket_name}/{file_path}")
         except Exception as e:
             logger.error(f"Error saving to GCS: {str(e)}")

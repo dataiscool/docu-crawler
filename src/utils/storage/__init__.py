@@ -1,5 +1,5 @@
 from .base import StorageBackend
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Union, BinaryIO
 import logging
 
 logger = logging.getLogger('DocuCrawler')
@@ -86,7 +86,7 @@ class StorageClient:
         self.use_gcs = use_gcs or (storage_type == 'gcs')
         self.output_dir = output_dir
     
-    def save_file(self, file_path: str, content: str) -> None:
+    def save_file(self, file_path: str, content: Union[str, bytes, BinaryIO]) -> None:
         """Save a file to the configured storage."""
         self.backend.save_file(file_path, content)
     
@@ -98,6 +98,6 @@ class StorageClient:
         """Retrieve file content."""
         return self.backend.get_file(file_path)
 
-    def append_file(self, file_path: str, content: str) -> None:
+    def append_file(self, file_path: str, content: Union[str, bytes]) -> None:
         """Append content to a file in the configured storage."""
         self.backend.append_file(file_path, content)

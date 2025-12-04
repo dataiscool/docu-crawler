@@ -25,7 +25,7 @@ class RateLimiter:
         self.per = per
         self.per_domain = per_domain
         self.tokens: Dict[str, float] = defaultdict(lambda: rate)
-        self.last_update: Dict[str, float] = defaultdict(time.time)
+        self.last_update: Dict[str, float] = defaultdict(lambda: time.time())
         self.lock = Lock()
     
     def wait_if_needed(self, domain: Optional[str] = None) -> None:

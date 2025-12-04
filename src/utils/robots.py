@@ -57,34 +57,23 @@ class RobotsTxtChecker:
         parser.set_url(robots_url)
         
         try:
-            # Use requests to fetch robots.txt to respect timeouts and headers
+            # Fetch robots.txt using requests so we can control timeouts and headers
             response = requests.get(robots_url, headers=self.headers, timeout=self.timeout)
             
             if response.status_code in (HTTP_UNAUTHORIZED, HTTP_FORBIDDEN):
-                # If access forbidden, assume disallowed (standard practice)
-                # However, RobotFileParser default is allow all if read fails.
-                # To be strict: disallow all. To be permissive: allow all.
-                # Googlebot treats 403 as "full allow" or "full disallow"? 
-                # Actually, 4xx usually means "no robots.txt" -> allow.
-                # But 401/403 specifically means auth/forbidden.
-                # We'll stick to standard behavior: if we can't read it, we usually default to allow,
-                # unless we want to simulate an empty disallow list.
-                # Let's log and proceed with empty parser (allow all).
+                # Can't read robots.txt so just allow everything. Be nice, not strict.
                 logger.warning(f"Access denied for robots.txt at {robots_url} ({response.status_code})")
                 
             elif response.status_code == HTTP_OK:
-                # Decode content safely, handling encoding issues
+                # Try utf-8, latin-1 if that doesn't work
                 try:
-                    content_text = response.text
-                except (UnicodeDecodeError, AttributeError):
+                    content_text = response.content.decode('utf-8')
+                except UnicodeDecodeError:
                     try:
-                        content_text = response.content.decode('utf-8')
+                        content_text = response.content.decode('latin-1')
                     except UnicodeDecodeError:
-                        try:
-                            content_text = response.content.decode('latin-1')
-                        except UnicodeDecodeError:
-                            logger.warning(f"Could not decode robots.txt content from {robots_url}")
-                            content_text = ''
+                        logger.warning(f"Could not decode robots.txt content from {robots_url}")
+                        content_text = ''
                 
                 lines = content_text.splitlines()
                 parser.parse(lines)
@@ -92,7 +81,7 @@ class RobotsTxtChecker:
                 
         except Exception as e:
             logger.warning(f"Could not load robots.txt from {robots_url}: {str(e)}")
-            # Fallback to allow all (default state of new RobotFileParser)
+            # Default to allowing everything if we can't read robots.txt
         
         self.parsers[domain] = parser
         self.cache_time[domain] = time.time()

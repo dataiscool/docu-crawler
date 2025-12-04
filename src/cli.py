@@ -49,6 +49,12 @@ def run():
         if params.get(key) is None:
             params[key] = value
     
+    # Validate URL is present and not empty
+    url = params.get('url')
+    if not url or not isinstance(url, str) or not url.strip():
+        print("Error: URL is required and cannot be empty.")
+        return 1
+    
     storage_type = params.get('storage_type', 'local')
     if storage_type == 'gcs' and not params.get('bucket'):
         print("Error: When using GCS storage, a bucket name (--bucket) is required.")
@@ -100,7 +106,9 @@ def run():
         logger.info("Crawler stopped by user")
         return 1
     except Exception as e:
-        logger.critical(f"Unhandled exception: {str(e)}", exc_info=True)
+        # Logger might have already logged this if it came from DocuCrawler
+        if not getattr(e, 'already_logged', False):
+            logger.critical(f"Unhandled exception: {str(e)}", exc_info=True)
         return 1
     
     return 0

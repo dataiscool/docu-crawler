@@ -80,7 +80,7 @@ class HtmlProcessor:
             # Find main content using defined selectors
             main_content = None
             
-            # 1. Try explicit selectors first
+            # Try our list of selectors first
             for selector in self.MAIN_CONTENT_SELECTORS:
                 if '.' in selector:
                     tag, cls = selector.split('.', 1)
@@ -97,7 +97,7 @@ class HtmlProcessor:
                         val = val.strip('"\'')
                         main_content = soup.find(tag, attrs={attr: val})
                     except ValueError:
-                        # Invalid attribute selector format, skip
+                        # This selector looks broken, skip it
                         logger.debug(f"Invalid attribute selector format: {selector}")
                         continue
                 else:
@@ -106,11 +106,19 @@ class HtmlProcessor:
                 if main_content:
                     break
             
-            # 2. Heuristic fallback: look for content/doc in class/id
+            # Look for divs with content or doc in the class name
             if not main_content:
-                main_content = soup.find('div', class_=lambda c: c and ('content' in c.lower() or 'doc' in c.lower()))
+                def class_filter(c):
+                    if c is None:
+                        return False
+                    if isinstance(c, str):
+                        return 'content' in c.lower() or 'doc' in c.lower()
+                    if isinstance(c, list):
+                        return any('content' in str(cls).lower() or 'doc' in str(cls).lower() for cls in c)
+                    return False
+                main_content = soup.find('div', class_=class_filter)
             
-            # 3. Ultimate fallback: use body
+            # Last resort: just use the body tag
             if not main_content:
                 main_content = soup.body
             
@@ -168,8 +176,7 @@ class HtmlProcessor:
             ''
         ]
         
-        # If the content already starts with a title that matches, we might want to keep it or remove it.
-        # Usually frontmatter replaces the H1 title, but let's keep H1 for now as it's part of the content.
+        # Stick the frontmatter at the top, keep any existing H1 titles in the content
         
         return '\n'.join(frontmatter) + markdown
 
@@ -265,7 +272,7 @@ class HtmlProcessor:
         Returns:
             Cleaned markdown content
         """
-        # Remove empty links and images (useless tokens for LLMs)
+        # Get rid of empty links and images (they're just clutter)
         markdown = re.sub(r'\[\s*\]\([^)]*\)', '', markdown)
         markdown = re.sub(r'!\[\s*\]\([^)]*\)', '', markdown)
         
@@ -346,6 +353,7 @@ class HtmlProcessor:
             return markdown
         except Exception as e:
             logger.error(f"Error in simple HTML to Markdown conversion: {str(e)}")
+            # Last resort error message (when even the simple converter gives up)
             return "# Error Converting Page\n\nThere was an error converting this page to Markdown."
     
     def _process_headings(self, content):
@@ -424,7 +432,10 @@ class HtmlProcessor:
                                 language = parts[1]
                             break
                         elif cls.startswith('brush:'):
-                            language = cls.split(':', 1)[1] if ':' in cls else ''
+                            try:
+                                language = cls.split(':', 1)[1]
+                            except IndexError:
+                                language = ''
                             break
                 
                 if not language and pre.get('class'):
@@ -435,7 +446,10 @@ class HtmlProcessor:
                                 language = parts[1]
                             break
                         elif cls.startswith('brush:'):
-                            language = cls.split(':', 1)[1] if ':' in cls else ''
+                            try:
+                                language = cls.split(':', 1)[1]
+                            except IndexError:
+                                language = ''
                             break
                 
                 code_text = code_element.get_text()
@@ -583,6 +597,7 @@ class HtmlProcessor:
                 continue
             
             markdown_table = []
+            header_cells = None
             
             if table.find('thead'):
                 header_cells = table.find('thead').find_all('th')
@@ -646,10 +661,9 @@ class HtmlProcessor:
                     
                     if not has_header and i == 0 and first_row_cells:
                         num_cols = len(first_row_cells)
-                        if len(markdown_table) > 0:
-                            separator_row = '| ' + ' | '.join(['---'] * num_cols) + ' |'
-                            markdown_table.insert(1, separator_row)
-                            has_header = True
+                        separator_row = '| ' + ' | '.join(['---'] * num_cols) + ' |'
+                        markdown_table.insert(1, separator_row)
+                        has_header = True
             
             if markdown_table:
                 table.replace_with(NavigableString('\n' + '\n'.join(markdown_table) + '\n'))

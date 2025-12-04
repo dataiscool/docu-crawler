@@ -15,7 +15,7 @@ from src.utils.robots import RobotsTxtChecker
 from src.utils.rate_limiter import SimpleRateLimiter
 from src.utils.retry import retry_on_http_error
 from src.utils.sitemap import SitemapParser
-from src.exceptions import InvalidURLError, ContentTooLargeError
+from src.exceptions import InvalidURLError, ContentTooLargeError, CrawlerError
 
 logger = logging.getLogger('DocuCrawler')
 
@@ -94,7 +94,7 @@ class DocuCrawler:
             'Accept-Language': 'en-US,en;q=0.5',
         }
         
-        # Initialize config for HTML processor
+        # Set up the HTML processor with our config
         html_config_args = {
             'single_file': single_file,
             'base_url': start_url
@@ -113,27 +113,15 @@ class DocuCrawler:
         self._on_error_callback: Optional[Callable[[str, Exception], None]] = on_error
         self.sitemap_parser = SitemapParser(session=self.session)
         
-        # Check if start URL is a sitemap
+        # Check if they gave us a sitemap URL instead of a regular page
         if start_url.lower().endswith('.xml') or 'sitemap' in start_url.lower():
             logger.info("Detected sitemap URL. Fetching URLs from sitemap...")
             sitemap_urls = self.sitemap_parser.fetch_urls(start_url)
             if sitemap_urls:
                 logger.info(f"Found {len(sitemap_urls)} URLs in sitemap.")
-                # Replace the queue with sitemap URLs (or append?)
-                # Usually if sitemap is provided, we want to crawl those.
-                # But start_url is usually the "root" for validation.
-                # If start_url is sitemap.xml, we need a new base_domain/base_path maybe?
-                # Actually, sitemap URLs are absolute.
-                
-                # If start_url was a sitemap, we might want to adjust base_domain/path
-                # But let's keep the user's intent. 
-                # If they gave a sitemap, they probably want to crawl those pages.
-                
-                # We need to add them to the queue.
+                # Dump all the sitemap URLs into our queue (we'll validate them later)
                 for url in sitemap_urls:
                     if url not in self.urls_in_queue and url not in self.visited_urls:
-                        # Optional: Check valid url?
-                        # If we strictly enforce base_domain of sitemap URL, it might match.
                         self.urls_to_visit.append(url)
                         self.urls_in_queue.add(url)
             else:
@@ -156,19 +144,21 @@ class DocuCrawler:
             )
             self.output_dir = output_dir
         
-        # If single file mode is enabled, clear the output file if it exists
+        # Single file mode needs a header to start
         if self.single_file:
             combined_file_path = DEFAULT_SINGLE_FILE_NAME
-            # Try to clear the file if it exists
             try:
                 if self.storage.exists(combined_file_path):
-                    # For local storage, this effectively clears it. 
-                    # For cloud, it overwrites with empty string or header.
+                    # Wipe it clean and start fresh with a header
                     self.storage.save_file(combined_file_path, f"# Documentation Crawl\nStarted: {time.strftime('%Y-%m-%d %H:%M:%S')}\nRoot: {self.start_url}\n\n")
             except Exception as e:
                 logger.warning(f"Could not initialize single file: {e}")
             
-        storage_info = f"storage type: {storage_config.get('storage_type', 'local' if not use_gcs else 'gcs')}" if storage_config else f"local directory: {output_dir}"
+        if storage_config:
+            storage_type_name = storage_config.get('storage_type', 'local' if not use_gcs else 'gcs')
+            storage_info = f"storage type: {storage_type_name}"
+        else:
+            storage_info = f"local directory: {output_dir}"
         logger.info(f"Crawler initialized with start URL: {start_url} ({storage_info})")
         logger.info(f"Base domain: {self.base_domain}, Base path: {self.base_path}")
         if self.single_file:
@@ -224,18 +214,18 @@ class DocuCrawler:
                     self.storage.append_file(combined_file_path, content_to_append)
                 except Exception as e:
                     logger.error(f"Failed to append to single file: {e}")
-                    # Fallback to individual file save if single file fails
+                    # Single file mode failed, save individually instead
                     file_path = self.get_filepath(url)
                     self.storage.save_file(file_path, text_content)
             else:
-                # Standard individual file mode
+                # Regular mode, one file per page
                 file_path = self.get_filepath(url)
                 self.storage.save_file(file_path, text_content)
                 
             self.stats.pages_processed += 1
             logger.debug(f"Processed: {url} ({len(text_content)} characters)")
             
-            # Call on_page_crawled callback if set
+            # Let the callback know we finished a page (if someone's listening)
             if self._on_page_crawled_callback:
                 try:
                     self._on_page_crawled_callback(url, self.stats.pages_processed)
@@ -329,6 +319,8 @@ class DocuCrawler:
         except Exception as e:
             logger.critical(f"Critical error during crawl: {str(e)}", exc_info=True)
             self._log_stats(final=True)
+            e.already_logged = True
+            raise
     
     def _log_stats(self, final: bool = False) -> None:
         """Log statistics about the crawl progress."""
