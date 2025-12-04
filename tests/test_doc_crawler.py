@@ -46,16 +46,21 @@ class TestDocuCrawler(unittest.TestCase):
         with self.assertRaises(ValueError):
             DocuCrawler("https://example.com", output_dir="")
     
-    @patch('src.doc_crawler.requests.Session')
-    def test_fetch_url_content_too_large(self, mock_session):
+    def test_fetch_url_content_too_large(self):
         """Test that content exceeding max size raises error."""
         crawler = DocuCrawler("https://example.com")
-        crawler.max_content_length = 100  # Small limit
+        crawler.max_content_length = 100  # small limit
         
+        # Mock the session.get method
         mock_response = Mock()
         mock_response.headers = {'Content-Length': '200'}
         mock_response.close = Mock()
-        mock_session.return_value.get.return_value = mock_response
+        mock_response.iter_content = Mock(return_value=iter([b'x' * 200]))  # Simulate large content
+        mock_response._content = None
+        mock_response.raw = Mock()
+        mock_response.raw._content = None
+        
+        crawler.session.get = Mock(return_value=mock_response)
         
         with self.assertRaises(ContentTooLargeError):
             crawler._fetch_url_with_retry("https://example.com")
@@ -74,7 +79,7 @@ class TestDocuCrawler(unittest.TestCase):
     def test_call_error_callback_none(self):
         """Test error callback when not set."""
         crawler = DocuCrawler("https://example.com")
-        # Should not raise
+        # should not raise
         crawler._call_error_callback("https://example.com", Exception("Test"))
 
 
