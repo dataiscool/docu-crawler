@@ -55,7 +55,8 @@ class TestDocuCrawler(unittest.TestCase):
         mock_response = Mock()
         mock_response.headers = {'Content-Length': '200'}
         mock_response.close = Mock()
-        mock_response.iter_content = Mock(return_value=iter([b'x' * 200]))  # Simulate large content
+        # iter_content needs to be a callable that returns an iterator
+        mock_response.iter_content = Mock(return_value=iter([b'x' * 101]))  # Simulate content exceeding limit
         mock_response._content = None
         mock_response.raw = Mock()
         mock_response.raw._content = None
