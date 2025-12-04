@@ -21,8 +21,8 @@ class HtmlProcessorConfig:
     google_doc: bool = False
     hide_strikethrough: bool = False
     base_url: Optional[str] = None
-    single_file: bool = False  # New option for consolidating output
-    include_frontmatter: bool = False  # Include YAML frontmatter
+    single_file: bool = False  # new option for consolidating output
+    include_frontmatter: bool = False  # include YAML frontmatter
     
     def should_skip_link(self, href: str) -> bool:
         """Determine if a link should be skipped based on configuration."""

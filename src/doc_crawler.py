@@ -94,7 +94,7 @@ class DocuCrawler:
             'Accept-Language': 'en-US,en;q=0.5',
         }
         
-        # Set up the HTML processor with our config
+        # set up the HTML processor with our config
         html_config_args = {
             'single_file': single_file,
             'base_url': start_url
@@ -113,13 +113,13 @@ class DocuCrawler:
         self._on_error_callback: Optional[Callable[[str, Exception], None]] = on_error
         self.sitemap_parser = SitemapParser(session=self.session)
         
-        # Check if they gave us a sitemap URL instead of a regular page
+        # check if they gave us a sitemap URL instead of a regular page
         if start_url.lower().endswith('.xml') or 'sitemap' in start_url.lower():
             logger.info("Detected sitemap URL. Fetching URLs from sitemap...")
             sitemap_urls = self.sitemap_parser.fetch_urls(start_url)
             if sitemap_urls:
                 logger.info(f"Found {len(sitemap_urls)} URLs in sitemap.")
-                # Dump all the sitemap URLs into our queue (we'll validate them later)
+                # dump all the sitemap URLs into our queue (we'll validate them later)
                 for url in sitemap_urls:
                     if url not in self.urls_in_queue and url not in self.visited_urls:
                         self.urls_to_visit.append(url)
@@ -144,12 +144,12 @@ class DocuCrawler:
             )
             self.output_dir = output_dir
         
-        # Single file mode needs a header to start
+        # single file mode needs a header to start
         if self.single_file:
             combined_file_path = DEFAULT_SINGLE_FILE_NAME
             try:
                 if self.storage.exists(combined_file_path):
-                    # Wipe it clean and start fresh with a header
+                    # wipe it clean and start fresh with a header
                     self.storage.save_file(combined_file_path, f"# Documentation Crawl\nStarted: {time.strftime('%Y-%m-%d %H:%M:%S')}\nRoot: {self.start_url}\n\n")
             except Exception as e:
                 logger.warning(f"Could not initialize single file: {e}")
@@ -203,10 +203,10 @@ class DocuCrawler:
             )
             
             if self.single_file:
-                # In single file mode, append to the main documentation file
+                # in single file mode, append to the main documentation file
                 combined_file_path = DEFAULT_SINGLE_FILE_NAME
                 
-                # Add a clear header for the new page
+                # add a clear header for the new page
                 page_header = f"\n\n---\n\n# Source: {url}\n\n"
                 content_to_append = page_header + text_content
                 
@@ -214,18 +214,18 @@ class DocuCrawler:
                     self.storage.append_file(combined_file_path, content_to_append)
                 except Exception as e:
                     logger.error(f"Failed to append to single file: {e}")
-                    # Single file mode failed, save individually instead
+                    # single file mode failed, save individually instead
                     file_path = self.get_filepath(url)
                     self.storage.save_file(file_path, text_content)
             else:
-                # Regular mode, one file per page
+                # regular mode, one file per page
                 file_path = self.get_filepath(url)
                 self.storage.save_file(file_path, text_content)
                 
             self.stats.pages_processed += 1
             logger.debug(f"Processed: {url} ({len(text_content)} characters)")
             
-            # Let the callback know we finished a page (if someone's listening)
+            # let the callback know we finished a page (if someone's listening)
             if self._on_page_crawled_callback:
                 try:
                     self._on_page_crawled_callback(url, self.stats.pages_processed)

@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.2.0] - 2025-12-04
+
+### Added
+- Automated release workflow via GitHub Actions
+- Release scripts for Windows (PowerShell) and Linux/Mac (Bash)
+- Comprehensive release documentation (RELEASE.md)
+- Version badges in README (PyPI, Python version, License)
+
+### Changed
+- Updated README with v1.1.0 improvements and better documentation
+- Enhanced callback parameter documentation in API reference
+- Improved troubleshooting section with v1.1.0+ fixes
+
+### Infrastructure
+- Separated release workflow from CI/testing workflow
+- Added automated PyPI publishing on version tag push
+- Added automated GitHub release creation with changelog extraction
+
 ## [1.1.0] - 2025-12-04
 
 ### Fixed
@@ -26,11 +44,6 @@
 - Removed hyphens from comments for more natural reading flow
 - Improved code comments to sound less formulaic and more conversational
 
-### Code Quality
-- Extracted all magic numbers to named constants (DEFAULT_CHUNK_SIZE, HTTP_OK, etc.)
-- Fixed all type inconsistencies across storage backends
-- Improved code consistency and maintainability
-- Enhanced error messages and logging context
 
 ## [1.0.1] - 2025-12-04
 

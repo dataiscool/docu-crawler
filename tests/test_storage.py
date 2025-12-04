@@ -58,7 +58,7 @@ class TestLocalStorageBackend(unittest.TestCase):
     
     def test_sanitize_path(self):
         """Test path sanitization."""
-        # Test directory traversal prevention
+        # test directory traversal prevention
         safe_path = self.storage._sanitize_path("../../../etc/passwd")
         self.assertNotIn("..", str(safe_path))
         self.assertNotIn("etc", str(safe_path))

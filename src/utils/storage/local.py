@@ -115,11 +115,11 @@ class LocalStorageBackend(StorageBackend):
         parts = []
         for part in path.split('/'):
             if part == '..':
-                # Block directory traversal attempts
+                # block directory traversal attempts
                 if parts:
                     parts.pop()
             elif part and part != '.':
-                # Remove Windows special characters that break things
+                # remove Windows special characters that break things
                 part = part.translate(str.maketrans('', '', '<>:"|?*'))
                 if part:
                     parts.append(part)

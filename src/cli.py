@@ -49,7 +49,7 @@ def run():
         if params.get(key) is None:
             params[key] = value
     
-    # Validate URL is present and not empty
+    # validate URL is present and not empty
     url = params.get('url')
     if not url or not isinstance(url, str) or not url.strip():
         print("Error: URL is required and cannot be empty.")
@@ -106,7 +106,7 @@ def run():
         logger.info("Crawler stopped by user")
         return 1
     except Exception as e:
-        # Logger might have already logged this if it came from DocuCrawler
+        # logger might have already logged this if it came from DocuCrawler
         if not getattr(e, 'already_logged', False):
             logger.critical(f"Unhandled exception: {str(e)}", exc_info=True)
         return 1

@@ -50,7 +50,7 @@ def retry_with_backoff(
                         logger.error(f"All {max_retries + 1} attempts failed for {func.__name__}")
                         raise last_exception
             
-            # Should never get here but type checkers need this
+            # should never get here but type checkers need this
             raise RuntimeError("Unexpected error in retry decorator")
         
         return wrapper

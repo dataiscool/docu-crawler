@@ -9,7 +9,7 @@ logger = logging.getLogger('DocuCrawler')
 
 DEFAULT_CACHE_DURATION = 3600
 
-# HTTP status codes
+# http status codes
 HTTP_OK = 200
 HTTP_UNAUTHORIZED = 401
 HTTP_FORBIDDEN = 403
@@ -57,15 +57,15 @@ class RobotsTxtChecker:
         parser.set_url(robots_url)
         
         try:
-            # Fetch robots.txt using requests so we can control timeouts and headers
+            # fetch robots.txt using requests so we can control timeouts and headers
             response = requests.get(robots_url, headers=self.headers, timeout=self.timeout)
             
             if response.status_code in (HTTP_UNAUTHORIZED, HTTP_FORBIDDEN):
-                # Can't read robots.txt so just allow everything. Be nice, not strict.
+                # can't read robots.txt so just allow everything. be nice, not strict.
                 logger.warning(f"Access denied for robots.txt at {robots_url} ({response.status_code})")
                 
             elif response.status_code == HTTP_OK:
-                # Try utf-8, latin-1 if that doesn't work
+                # try utf-8, latin-1 if that doesn't work
                 try:
                     content_text = response.content.decode('utf-8')
                 except UnicodeDecodeError:
@@ -81,7 +81,7 @@ class RobotsTxtChecker:
                 
         except Exception as e:
             logger.warning(f"Could not load robots.txt from {robots_url}: {str(e)}")
-            # Default to allowing everything if we can't read robots.txt
+            # default to allowing everything if we can't read robots.txt
         
         self.parsers[domain] = parser
         self.cache_time[domain] = time.time()

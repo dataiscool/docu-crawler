@@ -55,7 +55,7 @@ class SitemapParser:
             response = self.session.get(sitemap_url, timeout=30)
             response.raise_for_status()
             
-            # Decode content, utf-8 then latin-1
+            # decode content, utf-8 then latin-1
             try:
                 content_text = response.content.decode('utf-8')
             except UnicodeDecodeError:
@@ -65,7 +65,7 @@ class SitemapParser:
                     logger.error(f"Could not decode sitemap content from {sitemap_url}")
                     return list(urls)
             
-            # What kind of sitemap is this?
+            # what kind of sitemap is this?
             if '<sitemapindex' in content_text:
                 self._parse_index(response.content, urls, visited, max_depth)
             elif '<urlset' in content_text:
@@ -82,13 +82,13 @@ class SitemapParser:
         """Parse a standard urlset sitemap."""
         try:
             root = ET.fromstring(content)
-            # XML namespaces. Some sitemaps use them, some don't.
+            # xml namespaces. some sitemaps use them, some don't.
             ns = {'ns': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
             
-            # Check for namespace first
+            # check for namespace first
             locs = root.findall('.//ns:loc', ns)
             if not locs:
-                # No namespace found, try without it
+                # no namespace found, try without it
                 locs = root.findall('.//loc')
                 
             for loc in locs:
@@ -112,7 +112,7 @@ class SitemapParser:
             for loc in sitemaps:
                 if loc.text:
                     sub_sitemap_url = loc.text.strip()
-                    # Recursively fetch sub sitemaps, but watch the depth
+                    # recursively fetch sub sitemaps, but watch the depth
                     sub_urls = self.fetch_urls(sub_sitemap_url, visited, max_depth - 1)
                     urls.update(sub_urls)
                     

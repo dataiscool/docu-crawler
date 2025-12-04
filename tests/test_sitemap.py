@@ -30,7 +30,7 @@ class TestSitemapParser(unittest.TestCase):
 
     def test_parse_index(self):
         """Test parsing a sitemap index."""
-        # Mock response for sub-sitemap
+        # mock response for sub-sitemap
         mock_response = Mock()
         mock_response.text = "<urlset><url><loc>http://example.com/subpage</loc></url></urlset>"
         mock_response.content = mock_response.text.encode('utf-8')
@@ -47,7 +47,7 @@ class TestSitemapParser(unittest.TestCase):
         urls = set()
         self.parser._parse_index(xml_content, urls)
         
-        # Verify sub-sitemap was fetched
+        # verify sub-sitemap was fetched
         self.mock_session.get.assert_called_with("http://example.com/sitemap1.xml", timeout=30)
         self.assertIn("http://example.com/subpage", urls)
 
@@ -55,7 +55,7 @@ class TestSitemapParser(unittest.TestCase):
         """Test handling of malformed XML."""
         urls = set()
         self.parser._parse_urlset(b"not xml", urls)
-        self.assertEqual(len(urls), 0) # Should not crash, just find nothing
+        self.assertEqual(len(urls), 0) # should not crash, just find nothing
 
 if __name__ == '__main__':
     unittest.main()

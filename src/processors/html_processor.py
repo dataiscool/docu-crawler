@@ -31,7 +31,7 @@ class HtmlProcessor:
         'br': '\n'
     }
 
-    # Selectors for identifying the main content area
+    # selectors for identifying the main content area
     MAIN_CONTENT_SELECTORS = [
         'main', 'article',
         'div.content', 'div.documentation', 'div.document',
@@ -77,10 +77,10 @@ class HtmlProcessor:
                 for element in soup.select(selector):
                     element.decompose()
             
-            # Find main content using defined selectors
+            # find main content using defined selectors
             main_content = None
             
-            # Try our list of selectors first
+            # try our list of selectors first
             for selector in self.MAIN_CONTENT_SELECTORS:
                 if '.' in selector:
                     tag, cls = selector.split('.', 1)
@@ -97,7 +97,7 @@ class HtmlProcessor:
                         val = val.strip('"\'')
                         main_content = soup.find(tag, attrs={attr: val})
                     except ValueError:
-                        # This selector looks broken, skip it
+                        # this selector looks broken, skip it
                         logger.debug(f"Invalid attribute selector format: {selector}")
                         continue
                 else:
@@ -106,7 +106,7 @@ class HtmlProcessor:
                 if main_content:
                     break
             
-            # Look for divs with content or doc in the class name
+            # look for divs with content or doc in the class name
             if not main_content:
                 def class_filter(c):
                     if c is None:
@@ -118,7 +118,7 @@ class HtmlProcessor:
                     return False
                 main_content = soup.find('div', class_=class_filter)
             
-            # Last resort: just use the body tag
+            # last resort: just use the body tag
             if not main_content:
                 main_content = soup.body
             
@@ -176,7 +176,7 @@ class HtmlProcessor:
             ''
         ]
         
-        # Stick the frontmatter at the top, keep any existing H1 titles in the content
+        # stick the frontmatter at the top, keep any existing H1 titles in the content
         
         return '\n'.join(frontmatter) + markdown
 
@@ -272,22 +272,22 @@ class HtmlProcessor:
         Returns:
             Cleaned markdown content
         """
-        # Get rid of empty links and images (they're just clutter)
+        # get rid of empty links and images (they're just clutter)
         markdown = re.sub(r'\[\s*\]\([^)]*\)', '', markdown)
         markdown = re.sub(r'!\[\s*\]\([^)]*\)', '', markdown)
         
-        # Consolidate excessive newlines (max 2)
+        # consolidate excessive newlines (max 2)
         markdown = re.sub(r'\n{3,}', '\n\n', markdown)
         
-        # Fix common list formatting issues
+        # fix common list formatting issues
         markdown = re.sub(r'\n\*', '\n\n*', markdown)
         markdown = re.sub(r'\n\d+\.', '\n\n\\g<0>', markdown)
         
-        # Ensure code blocks have proper spacing
+        # ensure code blocks have proper spacing
         markdown = re.sub(r'```\s+', '```\n', markdown)
         markdown = re.sub(r'\s+```', '\n```', markdown)
         
-        # Ensure headers have space after #
+        # ensure headers have space after #
         markdown = re.sub(r'([^\n])(\n#{1,6} )', '\\1\n\n\\2', markdown)
         
         paragraphs = []
@@ -353,7 +353,7 @@ class HtmlProcessor:
             return markdown
         except Exception as e:
             logger.error(f"Error in simple HTML to Markdown conversion: {str(e)}")
-            # Last resort error message (when even the simple converter gives up)
+            # last resort error message (when even the simple converter gives up)
             return "# Error Converting Page\n\nThere was an error converting this page to Markdown."
     
     def _process_headings(self, content):
@@ -735,7 +735,7 @@ class HtmlProcessor:
 
             absolute_url = urljoin(current_url, href)
             
-            # Remove fragment (anchor) to avoid duplicate crawling of same page
+            # remove fragment (anchor) to avoid duplicate crawling of same page
             absolute_url, _ = urldefrag(absolute_url)
 
             if is_valid_url_func(absolute_url):

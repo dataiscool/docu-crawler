@@ -1,14 +1,14 @@
 from setuptools import setup, find_packages
 import os
 
-# Read the contents of README.md
+# read the contents of README.md
 with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'README.md'), 
           encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
     name="docu-crawler",
-    version="1.1.0",
+    version="1.2.0",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/dataiscool/docu-crawler",
@@ -22,7 +22,7 @@ setup(
         "beautifulsoup4>=4.9.0",
     ],
     extras_require={
-        "yaml": ["pyyaml>=6.0"],  # Only needed for YAML config file support
+        "yaml": ["pyyaml>=6.0"],  # only needed for YAML config file support
         "gcs": ["google-cloud-storage>=2.0.0"],
         "s3": ["boto3>=1.26.0"],
         "azure": ["azure-storage-blob>=12.0.0"],

@@ -60,12 +60,12 @@ class StorageBackend(ABC):
             return
 
         if isinstance(content, str):
-            # Decode existing content so we can append strings
+            # decode existing content so we can append strings
             try:
                 new_content = existing.decode('utf-8') + content
                 self.save_file(file_path, new_content)
             except UnicodeDecodeError:
-                # Not utf-8, just append as bytes
+                # not utf-8, just append as bytes
                 self.save_file(file_path, existing + content.encode('utf-8'))
         else:
             self.save_file(file_path, existing + content)
