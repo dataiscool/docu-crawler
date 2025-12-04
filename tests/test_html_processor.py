@@ -20,7 +20,7 @@ class TestHtmlProcessor(unittest.TestCase):
         """
         processor = HtmlProcessor()
         markdown = processor.extract_text(html)
-        # Content has H1, so title isn't prepended
+        # content has H1, so title isn't prepended
         self.assertIn("# Hello World", markdown) 
         self.assertIn("This is a test.", markdown)
 
@@ -28,7 +28,7 @@ class TestHtmlProcessor(unittest.TestCase):
         """Test ignoring links."""
         config = HtmlProcessorConfig(ignore_links=True)
         processor = HtmlProcessor(config)
-        # Wrap in main to ensure content detection works
+        # wrap in main to ensure content detection works
         html = """
         <html>
             <head><title>Test</title></head>
@@ -40,7 +40,7 @@ class TestHtmlProcessor(unittest.TestCase):
         </html>
         """
         markdown = processor.extract_text(html)
-        # Whitespace handling might introduce space before punctuation
+        # whitespace handling might introduce space before punctuation
         self.assertIn("Check this link", markdown)
         self.assertNotIn("](https://example.com)", markdown)
 
@@ -48,7 +48,7 @@ class TestHtmlProcessor(unittest.TestCase):
         """Test ignoring images."""
         config = HtmlProcessorConfig(ignore_images=True)
         processor = HtmlProcessor(config)
-        # Wrap in main to ensure content detection works
+        # wrap in main to ensure content detection works
         html = """
         <html>
             <head><title>Test</title></head>
@@ -66,7 +66,7 @@ class TestHtmlProcessor(unittest.TestCase):
     def test_post_process_cleanup(self):
         """Test post-processing cleanup of empty links and excessive newlines."""
         processor = HtmlProcessor()
-        # Markdown with empty links and too many newlines
+        # markdown with empty links and too many newlines
         raw_markdown = "Text\n\n\n[]()\n\nMore Text"
         cleaned = processor._post_process_markdown(raw_markdown)
         self.assertNotIn("[]()", cleaned)
@@ -90,8 +90,8 @@ class TestHtmlProcessor(unittest.TestCase):
         processor = HtmlProcessor()
         markdown = processor.extract_text(html)
         self.assertIn("Real Content", markdown)
-        self.assertNotIn("Sidebar", markdown) # Sidebar should be ignored if main content found
-        self.assertNotIn("Footer", markdown) # Footer is in ELEMENTS_TO_REMOVE
+        self.assertNotIn("Sidebar", markdown) # sidebar should be ignored if main content found
+        self.assertNotIn("Footer", markdown) # footer is in ELEMENTS_TO_REMOVE
 
 if __name__ == '__main__':
     unittest.main()

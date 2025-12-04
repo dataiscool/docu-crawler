@@ -1,0 +1,91 @@
+[1mdiff --git a/tests/__init__.py b/tests/__init__.py[m
+[1mindex 93a2d4b..7643548 100644[m
+[1m--- a/tests/__init__.py[m
+[1m+++ b/tests/__init__.py[m
+[36m@@ -1 +1 @@[m
+[31m-# Test package initialization[m
+\ No newline at end of file[m
+[32m+[m[32m# test package initialization[m
+\ No newline at end of file[m
+[1mdiff --git a/tests/test_doc_crawler.py b/tests/test_doc_crawler.py[m
+[1mindex 419040a..9f33d41 100644[m
+[1m--- a/tests/test_doc_crawler.py[m
+[1m+++ b/tests/test_doc_crawler.py[m
+[36m@@ -50,7 +50,7 @@[m [mclass TestDocuCrawler(unittest.TestCase):[m
+     def test_fetch_url_content_too_large(self, mock_session):[m
+         """Test that content exceeding max size raises error."""[m
+         crawler = DocuCrawler("https://example.com")[m
+[31m-        crawler.max_content_length = 100  # Small limit[m
+[32m+[m[32m        crawler.max_content_length = 100  # small limit[m
+         [m
+         mock_response = Mock()[m
+         mock_response.headers = {'Content-Length': '200'}[m
+[36m@@ -74,7 +74,7 @@[m [mclass TestDocuCrawler(unittest.TestCase):[m
+     def test_call_error_callback_none(self):[m
+         """Test error callback when not set."""[m
+         crawler = DocuCrawler("https://example.com")[m
+[31m-        # Should not raise[m
+[32m+[m[32m        # should not raise[m
+         crawler._call_error_callback("https://example.com", Exception("Test"))[m
+ [m
+ [m
+[1mdiff --git a/tests/test_html_processor.py b/tests/test_html_processor.py[m
+[1mindex b6369fe..3f11dfc 100644[m
+[1m--- a/tests/test_html_processor.py[m
+[1m+++ b/tests/test_html_processor.py[m
+[36m@@ -20,7 +20,7 @@[m [mclass TestHtmlProcessor(unittest.TestCase):[m
+         """[m
+         processor = HtmlProcessor()[m
+         markdown = processor.extract_text(html)[m
+[31m-        # Content has H1, so title isn't prepended[m
+[32m+[m[32m        # content has H1, so title isn't prepended[m
+         self.assertIn("# Hello World", markdown) [m
+         self.assertIn("This is a test.", markdown)[m
+ [m
+[36m@@ -28,7 +28,7 @@[m [mclass TestHtmlProcessor(unittest.TestCase):[m
+         """Test ignoring links."""[m
+         config = HtmlProcessorConfig(ignore_links=True)[m
+         processor = HtmlProcessor(config)[m
+[31m-        # Wrap in main to ensure content detection works[m
+[32m+[m[32m        # wrap in main to ensure content detection works[m
+         html = """[m
+         <html>[m
+             <head><title>Test</title></head>[m
+[36m@@ -40,7 +40,7 @@[m [mclass TestHtmlProcessor(unittest.TestCase):[m
+         </html>[m
+         """[m
+         markdown = processor.extract_text(html)[m
+[31m-        # Whitespace handling might introduce space before punctuation[m
+[32m+[m[32m        # whitespace handling might introduce space before punctuation[m
+         self.assertIn("Check this link", markdown)[m
+         self.assertNotIn("](https://example.com)", markdown)[m
+ [m
+[36m@@ -48,7 +48,7 @@[m [mclass TestHtmlProcessor(unittest.TestCase):[m
+         """Test ignoring images."""[m
+         config = HtmlProcessorConfig(ignore_images=True)[m
+         processor = HtmlProcessor(config)[m
+[31m-        # Wrap in main to ensure content detection works[m
+[32m+[m[32m        # wrap in main to ensure content detection works[m
+         html = """[m
+         <html>[m
+             <head><title>Test</title></head>[m
+[36m@@ -66,7 +66,7 @@[m [mclass TestHtmlProcessor(unittest.TestCase):[m
+     def test_post_process_cleanup(self):[m
+         """Test post-processing cleanup of empty links and excessive newlines."""[m
+         processor = HtmlProcessor()[m
+[31m-        # Markdown with empty links and too many newlines[m
+[32m+[m[32m        # markdown with empty links and too many newlines[m
+         raw_markdown = "Text\n\n\n[]()\n\nMore Text"[m
+         cleaned = processor._post_process_markdown(raw_markdown)[m
+         self.assertNotIn("[]()", cleaned)[m
+[36m@@ -90,8 +90,8 @@[m [mclass TestHtmlProcessor(unittest.TestCase):[m
+         processor = HtmlProcessor()[m
+         markdown = processor.extract_text(html)[m
+         self.assertIn("Real Content", markdown)[m
+[31m-        self.assertNotIn("Sidebar", markdown) # Sidebar should be ignored if main content found[m
+[31m-        self.assertNotIn("Footer", markdown) # Footer is in ELEMENTS_TO_REMOVE[m
+[32m+[m[32m        self.assertNotIn("Sidebar", markdown) # sidebar should be ignored if main content found[m
+[32m+[m[32m        self.assertNotIn("Footer", markdown) # footer is in ELEMENTS_TO_REMOVE[m
+ [m
+ if __name__ == '__main__':[m
+     unittest.main()[m
