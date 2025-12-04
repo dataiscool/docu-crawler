@@ -1,8 +1,14 @@
 # docu-crawler: Python Web Crawler for HTML to Markdown Conversion
 
+[![PyPI version](https://badge.fury.io/py/docu-crawler.svg)](https://badge.fury.io/py/docu-crawler)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 > **Fast, lightweight Python library for crawling websites and converting HTML to Markdown. Perfect for documentation extraction, content migration, and offline reading.**
 
 **docu-crawler** is a production-ready Python web crawler that extracts, converts, and stores web content efficiently. Crawl documentation sites, migrate content, and create offline documentation with minimal dependencies.
+
+**Current Version:** 1.1.0 - See [CHANGELOG.md](CHANGELOG.md) for latest updates and bug fixes.
 
 ## What is docu-crawler?
 
@@ -17,9 +23,10 @@
 
 - **Minimal Dependencies**: Only requires `requests` and `beautifulsoup4` for core functionality
 - **Easy to Use**: Simple Python API and CLI interface
-- **Production Ready**: Built-in retry logic, rate limiting, and error handling
+- **Production Ready**: Built-in retry logic, rate limiting, and comprehensive error handling
 - **Extensible**: Plugin-based storage system, easy to add custom backends
 - **Cross-Platform**: Works on Linux, Windows, and macOS
+- **Robust**: Extensive bug fixes and improvements in v1.1.0 for stability and reliability
 
 ## Key Features
 
@@ -124,6 +131,8 @@ result = crawl(
 )
 ```
 
+**Note:** Callbacks are now passed directly to the crawler constructor (v1.1.0+), providing better error handling and reliability.
+
 ## Storage Backends
 
 ### Local Filesystem (Default)
@@ -226,6 +235,8 @@ crawler.crawl()
 - `timeout` (int): Request timeout in seconds (default: 10, must be > 0)
 - `storage_config` (dict, optional): Storage configuration dictionary. If None, uses local storage.
 - `single_file` (bool): Whether to combine all crawled content into a single `documentation.md` file (default: False)
+- `on_page_crawled` (callable, optional): Callback function called when a page is successfully crawled. Signature: `(url: str, page_count: int) -> None`
+- `on_error` (callable, optional): Callback function called when an error occurs. Signature: `(url: str, error: Exception) -> None`
 
 **Raises:**
 - `InvalidURLError`: If start_url is invalid
@@ -270,6 +281,8 @@ result = crawl(
 **Callbacks:**
 - `on_page_crawled(url: str, page_count: int)`: Called when a page is successfully crawled
 - `on_error(url: str, error: Exception)`: Called when an error occurs
+
+**Note:** In v1.1.0+, callbacks are passed directly to `DocuCrawler` constructor for improved reliability and error handling.
 
 #### `crawl_to_local()`
 
@@ -511,6 +524,10 @@ docu-crawler is designed for efficiency with configurable rate limiting and retr
 
 **Connection Errors**: Check your network connection and ensure the target website is accessible. The crawler will retry failed requests up to 3 times.
 
+**Encoding Errors**: v1.1.0+ includes improved encoding handling with automatic UTF-8/Latin-1 fallback for better compatibility with international sites.
+
+**Sitemap Parsing Issues**: v1.1.0+ includes recursion protection and depth limits to prevent infinite loops when parsing nested sitemaps.
+
 ## Limitations
 
 - **JavaScript-rendered content**: The crawler does not execute JavaScript, so content rendered dynamically by JavaScript will not be captured.
@@ -523,9 +540,27 @@ docu-crawler is designed for efficiency with configurable rate limiting and retr
 
 Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## Release Process
+
+Releases are automated via GitHub Actions. See [RELEASE.md](RELEASE.md) for details on how releases work.
+
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) for version history.
+### Version 1.1.0 (Latest)
+
+**Bug Fixes:**
+- Fixed 14+ critical bugs including NameError, IndexError, AttributeError, and KeyError issues
+- Improved encoding handling for robots.txt and sitemap parsing
+- Fixed type signature mismatches across storage backends
+- Enhanced error handling and exception propagation
+
+**Improvements:**
+- Better callback mechanism (passed directly to constructor)
+- Improved code comments and documentation
+- Enhanced recursion protection for nested sitemap parsing
+- Better URL validation and CLI argument handling
+
+See [CHANGELOG.md](CHANGELOG.md) for complete version history.
 
 ## License
 
